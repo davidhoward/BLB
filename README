@@ -1,6 +1,6 @@
 Thank you for using the UC Berkeley BLB Specializer. For more information on this 
 specializer and the ASP project, please visit http://www.sejits.org. This document
-describes the basic steps neccessary to install and use the UC Berkeley BLB
+describes the basic steps necessary to install and use the UC Berkeley BLB
 Specializer. For information on using this specializer, please see 
 https://github.com/davidhoward/BLB/wiki/Home .
 
@@ -33,16 +33,16 @@ but is necessary for the specializer to function properly. This specializer was 
 GSL 1.15. For information and to get GSL, please visit http://www.gnu.org/s/gsl.
 
 iv) Spark Computing Cluster (Optional for Distributed Version of Specializer) 
-   See spark-project.org for information on this AMP lab developed open source cluster computing
-   system and how to install.
+   See spark-project.org for information on this AMP lab developed open source cluster 
+   computing system and how to install.
 
 2. INSTALLATION AND SETUP
 
-    Preparing the UC Berkeley BLB Specializer for use involves three steps: Acquiring the source
-files, altering the appropriate environment variables, and writing the configuration files. For
-the distributed version of the specializer, one must get up and running a Spark computing cluster. 
-See the final section here for additional details on this and what to do once the Spark cluster is
-up. 
+    Preparing the UC Berkeley BLB Specializer for use involves three steps: Acquiring the 
+    source files, altering the appropriate environment variables, and writing the 
+    configuration files. For the distributed version of the specializer, one must get up and 
+    running a Spark computing cluster. See the final section here for additional details on 
+    this and what to do once the Spark cluster is up. 
 
 
 ACQUIRING THE SOURCE 
@@ -55,13 +55,14 @@ This is a git repository, and may be cloned as such.
 SETTING ENVIRONMENT VARIABLES
 
 For easy use of this specializer, please ensure that the directory containing the compiled GSL
-binary is on your LD_LIBRARY_PATH, and that the root directory of your specializer installation
+binary is on your LD_LIBRARY_PATH, and that the root directory of your specializer installation 
 (the one containing this document) is on your PYTHONPATH.
 
 WRITING THE CONFIGURATION FILE
 
-The UC Berkeley BLB Specializer requires some information about your system to function properly.
-You should createa file in your root BLB directory named blb_setup.py with the following contents:
+The UC Berkeley BLB Specializer requires some information about your system to function 
+properly. You should createa file in your root BLB directory named blb_setup.py with the 
+following contents:
 
 - gslroot = "/path/to/gsl/header_files"
   The specializer needs to know where to find the gsl header files.
@@ -73,15 +74,35 @@ An example of a properly formatted blb_local_setup.py is located in blb_local_se
 
 DISTRIBUTED VERSION SETUP
 
-To setup the distributed version, first get up and running a Spark cluster. Inside the master node
-on the cluster, run the setup script located here: 
+To setup the distributed version, first get up and running a Spark cluster. Inside the master 
+node on the cluster, run the setup script located here: 
 	https://github.com/davidhoward/BLB/blob/master/distributed_setup.sh
-
 Then, it is advisable to adjust the level of parallelism for your cluster. To do this,
-open the file ~/sejits/asp/specializers/blb/blb_core_parallel.scala and go to line 88. There, one 
-can adjust the level of parallelism that is ideal for the their cluster (likely the number of cores
-in the cluster).
+open the file ~/sejits/asp/specializers/blb/blb_core_parallel.scala and go to line 88. There, 
+one can adjust the level of parallelism that is ideal for the their cluster (likely the number 
+of cores in the cluster).
 
 3. VERIFYING YOUR INSTALLATION
+  
+To verify a proper installation of the distributed version, open the BLB folder (~/BLB) and
+run ./run_dist_tests.sh
 
+If this works, congrats! You have just run the BLB (bag of little bootstraps) algorithm on 
+your cluster. The default behavior is to compute a classifier's estimated accuracy on a subset 
+of the Enron email corpus. As a note, when the calculation is over, the process will hang and 
+not completely end (some funky inner workings of Spark) so you can just control-c it after it 
+tells you the result (res is:......)
 
+4. RUNNING YOUR FIRST SPECIALIZED PROGRAM
+
+For the distributed version, to have gotten this far, you must have already run actually run 
+a test BLB SEJITS program when verifying your installation. To customize this test and perform
+alternative calculations, open the file on your cluster ~/BLB/tests/spark_test.py and edit
+the three input functions to the BLB algorithm (compute_estimate, reduce_bootstraps, and 
+average). An easy change would be to calculate the standard deviation instead of the mean
+in the reduce_bootstraps function. There is already a commented out standard deviation 
+function written.
+
+Past this customization, one can create their own distributed specializer instance as done in the
+bottom of spark_test.py file. For more information, see the wiki for this repo, specifically the
+section page titled "Using the Specializer."
