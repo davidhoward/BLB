@@ -33,8 +33,8 @@ but is necessary for the specializer to function properly. This specializer was 
 GSL 1.15. For information and to get GSL, please visit http://www.gnu.org/s/gsl.
 
 iv) Spark Computing Cluster (Optional for Distributed Version of Specializer) 
-   See spark-project.org for information on this AMP lab developed open source cluster 
-   computing system and how to install.
+   See spark-project.org for information on this open source cluster computing system
+   (developed in UC Berkeley's AMP Research Laboratory) and how to install.
 
 2. INSTALLATION AND SETUP
 
