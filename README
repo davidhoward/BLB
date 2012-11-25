@@ -61,7 +61,7 @@ binary is on your LD_LIBRARY_PATH, and that the root directory of your specializ
 WRITING THE CONFIGURATION FILE
 
 The UC Berkeley BLB Specializer requires some information about your system to function 
-properly. You should createa file in your root BLB directory named blb_setup.py with the 
+properly. You should create a file in your root BLB directory named blb_setup.py with the 
 following contents:
 
 - gslroot = "/path/to/gsl/header_files"
@@ -70,13 +70,13 @@ following contents:
   The specializer caches modules it has already compiled in this directory, so that it does
   not have to re-compile for cases it has already seen.
 
-An example of a properly formatted blb_local_setup.py is located in blb_local_setup_EXAMPLE.txt.
+An example of a properly formatted blb_setup.py is located in blb_setup_EXAMPLE.txt.
 
 DISTRIBUTED VERSION SETUP
 
 To setup the distributed version, first get up and running a Spark cluster. Inside the master 
 node on the cluster, run the setup script located here: 
-	https://github.com/davidhoward/BLB/blob/master/distributed_setup.sh
+	https://github.com/davidhoward/BLB/blob/master/blb_spark_setup.sh
 Then, it is advisable to adjust the level of parallelism for your cluster. To do this,
 open the file ~/sejits/asp/specializers/blb/blb_core_parallel.scala and go to line 88. There, 
 one can adjust the level of parallelism that is ideal for the their cluster (likely the number 
