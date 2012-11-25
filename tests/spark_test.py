@@ -58,9 +58,7 @@ class SVMVerifierBLB(BLB):
 class SVMVerifierBLBTest(unittest.TestCase):
 
     def test(self):
-        data = tuple([i*1.0 for i in xrange(5000)])
         test_blb = SVMVerifierBLB(25, 50, .6, with_scala=True)    
-           
         result = test_blb.run('s3n://AKIAJVLVU3XLP4GLMFEA:xZtDvTF5z0QYx5pZ8gI9KoSpcPHfKarUiNXDKGhy@halfmilEmail/seq113ktest',\
                               '/root/models/comp113kmodel.avro')
 	#Note: Spark will likely hang after the completion of the calculation and the following line will not be reached
