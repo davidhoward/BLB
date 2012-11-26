@@ -55,8 +55,8 @@ This is a git repository, and may be cloned as such.
 SETTING ENVIRONMENT VARIABLES
 
 For easy use of this specializer, please ensure that the directory containing the compiled GSL
-binary is on your LD_LIBRARY_PATH, and that the root directory of your specializer installation 
-(the one containing this document) is on your PYTHONPATH.
+binary is on your LD_LIBRARY_PATH, and that the root directory of your specializer 
+installation (the one containing this document) is on your PYTHONPATH.
 
 WRITING THE CONFIGURATION FILE
 
@@ -95,14 +95,14 @@ tells you the result (res is:......)
 
 4. RUNNING YOUR FIRST SPECIALIZED PROGRAM
 
-For the distributed version, to have gotten this far, you must have already run actually run 
-a test BLB SEJITS program when verifying your installation. To customize this test and perform
+For the distributed version, to have gotten here, you must have already actually ran the 
+test BLB SEJITS program when verifying your installation. To customize this test and perform
 alternative calculations, open the file on your cluster ~/BLB/tests/spark_test.py and edit
 the three input functions to the BLB algorithm (compute_estimate, reduce_bootstraps, and 
 average). An easy change would be to calculate the standard deviation instead of the mean
 in the reduce_bootstraps function. There is already a commented out standard deviation 
 function written.
 
-Past this customization, one can create their own distributed specializer instance as done in the
-bottom of spark_test.py file. For more information, see the wiki for this repo, specifically the
-section page titled "Using the Specializer."
+Past this customization, one can create their own distributed specializer instance as done in 
+the bottom of spark_test.py file. For more information, see the wiki for this repo, 
+specifically the section page titled "Using the Specializer."
