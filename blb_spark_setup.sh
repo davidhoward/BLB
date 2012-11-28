@@ -44,7 +44,7 @@ source /root/.bash_profile
 
 mkdir /root/models
 cd /root/models
-wget https://s3.amazonaws.com/halfmilEmai l/comp113kmodel.avro
+wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
 wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
 /root/mesos-ec2/copy-dir /root/models
 
