@@ -1,7 +1,6 @@
 !/bin/bash
 
-git clone git://github.com/pbirsinger/asp.git
-#git clone git://github.com/pbirsinger/SPARK_BLB.git
+git clone git://github.com/shoaibkamil/asp.git
 git clone git://github.com/davidhoward/BLB.git
 
 cd /root/spark
