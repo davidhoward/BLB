@@ -1,11 +1,14 @@
 !/bin/bash
 
+#get general asp framework and blb specializer
 git clone git://github.com/shoaibkamil/asp.git
 git clone git://github.com/davidhoward/BLB.git
 
+#compile spark
 cd /root/spark
 sbt/sbt assembly
 
+#install codepy and numpy
 cd /root
 mkdir asp_extra
 cd asp_extra
@@ -16,6 +19,7 @@ python setup.py build
 python setup.py install
 yum -y install numpy
 
+#install apache avro data serialization for python and java
 cd /root
 mkdir avro
 cd avro
@@ -32,21 +36,27 @@ wget http://www.trieuvan.com/apache/avro/avro-1.6.3/java/avro-1.6.3.jar
 unzip avro-1.6.3.jar
 mv org /root/avro
 
+#install jackson (java json processor)
 cd ..
-
 wget http://jackson.codehaus.org/1.9.6/jackson-all-1.9.6.jar
 unzip jackson-all-1.9.6.jar
 
+
+#point classpath to spark, avro,etc
 echo "export CLASSPATH=\$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.4-SNAPSHOT.jar" >> /root/.bash_profile
+
+#store MASTER node address
 echo "export MASTER=master@$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):5050" >> /root/.bash_profile
 source /root/.bash_profile
 
+#download classifier models from s3 and send to slave nodes
 mkdir /root/models
 cd /root/models
 wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
 wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
 /root/mesos-ec2/copy-dir /root/models
 
+#compile some java/scala files and send to slave nodes
 cd /root/asp/asp/avro_inter
 scalac scala_lib.scala
 javac -d ../avro_inter/ JAvroInter.java
@@ -54,7 +64,7 @@ javac -d ../avro_inter/ JAvroInter.java
 cp -r /root/asp/asp/avro_inter/* /root/avro
 /root/mesos-ec2/copy-dir /root/avro
 
-
+#add permissions, and compile another scala file
 cd /root/BLB/
 chmod +x run_dist_tests.sh
 scalac -d distr_support/ distr_support/custom_data.scala
