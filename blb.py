@@ -18,10 +18,6 @@ import asp.codegen.ast_tools as ast_tools
 from asp.codegen.codegen_scala import *
 import ast
 
-def combine(blb_funcs):
-    parent = (open('distr_support/blb_core_parallel.scala')).read()  
-    return parent + blb_funcs 
-	
 class BLB:
     known_reducers= ['mean', 'stdev', 'mean_norm', 'noop']
     def __init__(self, num_subsamples=25, num_bootstraps=100, 
@@ -84,37 +80,41 @@ class BLB:
             subsample_estimates.append(subsample_est)
 #                print "***PYTHON subsample estimate for subsample " + str(i) + " is " + str(subsample_est)
         return self.average(subsample_estimates)
-    
-    def run_distributed(self,data): 
+
+    def run_distributed(self,data):
         mod = asp_module.ASPModule(cache_dir = "/root/spark/examples/target/scala-2.9.1.final/classes/", use_scala=True)
-                                                                  
-        scala_estimate= ast_tools.ConvertPyAST_ScalaAST().visit(self.estimate_ast) 
+
+        scala_estimate= ast_tools.ConvertPyAST_ScalaAST().visit(self.estimate_ast)
         scala_reduce = ast_tools.ConvertPyAST_ScalaAST().visit(self.reduce_ast)
         scala_average =  ast_tools.ConvertPyAST_ScalaAST().visit(self.average_ast)
 
-        TYPE_DECS = (['compute_estimate', ['BootstrapData'], 'double'],             
+        TYPE_DECS = (['compute_estimate', ['BootstrapData'], 'double'],
              ['reduce_bootstraps', [('list', 'double')], 'double'],
              ['average', [('array', 'double')], 'double'])
-                  
-        scala_gen = SourceGenerator(TYPE_DECS)    
-        rendered_scala = scala_gen.to_source(scala_estimate)+'\n' + scala_gen.to_source(scala_reduce) \
+
+        scala_gen = SourceGenerator(TYPE_DECS)
+        rendered_scala_input_funcs = scala_gen.to_source(scala_estimate)+'\n' + scala_gen.to_source(scala_reduce) \
                             +'\n'+ scala_gen.to_source(scala_average)
-                
-        rendered_scala = combine(rendered_scala)
-        rendered = avro_backend.generate_scala_object("run","",rendered_scala)             
-        #NOTE: must append outer to function name above to get the classname 
-        # because of how scala_object created by avro_backend           
-        mod.add_function("run_outer", rendered, backend = "scala")   
-        
-	#NOTE: must add dependencies in make_dependency_jar so that slave nodes will receive proper files
-	time_stamp = str(int(round(time.time() * 1000)))
-	os.system('/root/BLB/distr_support/make_dependency_jar ' + '/root/BLB/distr_support/dependencies/' + time_stamp)
-	os.environ['DEPEND_LOC'] = '/root/BLB/distr_support/dependencies/' + time_stamp +'/depend.jar'
+
+        rendered_scala = self.prepend_scala_blb_core_funcs(rendered_scala_input_funcs)
+        rendered_scala_object = avro_backend.generate_scala_object("run","",rendered_scala)
+        #NOTE: must append outer to function name above to get the classname
+        # because of how scala_object created by avro_backend
+        mod.add_function("run_outer", rendered_scala_object, backend = "scala")
+
+        #NOTE: must add dependencies in make_dependency_jar so that slave nodes will receive proper files
+        time_stamp = str(int(round(time.time() * 1000)))
+        os.system('/root/BLB/distr_support/make_dependency_jar ' + '/root/BLB/distr_support/dependencies/' + time_stamp)
+        os.environ['DEPEND_LOC'] = '/root/BLB/distr_support/dependencies/' + time_stamp +'/depend.jar'
 
         email_filename = data[0]
         model_filename = data[1]
-        return mod.run_outer(email_filename, model_filename, self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)  
- 
+        return mod.run_outer(email_filename, model_filename, self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+
+    def prepend_scala_blb_core_funcs(self, blb_input_funcs):
+        blb_core_funcs = (open('distr_support/blb_core_parallel.scala')).read()
+        return blb_core_funcs + blb_input_funcs
+
     def compile_for( self, key  ):
 	mod = None
 	if key in self.cached_mods:

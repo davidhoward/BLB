@@ -49,12 +49,19 @@ echo "export CLASSPATH=\$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/sp
 echo "export MASTER=master@$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):5050" >> /root/.bash_profile
 source /root/.bash_profile
 
-#download classifier models from s3 and send to slave nodes
-mkdir /root/models
-cd /root/models
+#download classifier models and data (for enron email example) from s3 and send to slave nodes
+mkdir /root/enron_example
+mkdir /root/enron_example/models
+cd /root/enron_example/models
 wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
 wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
-/root/mesos-ec2/copy-dir /root/models
+
+mkdir /root/enron_example/data
+cd /root/enron_example/data
+wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
+wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
+
+/root/mesos-ec2/copy-dir /root/enron_example
 
 #compile some java/scala files and send to slave nodes
 cd /root/asp/asp/avro_inter
