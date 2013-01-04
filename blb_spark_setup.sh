@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 #get general asp framework and blb specializer
 git clone git://github.com/shoaibkamil/asp.git
@@ -6,7 +6,12 @@ git clone git://github.com/davidhoward/BLB.git
 
 #compile spark
 cd /root/spark
-sbt/sbt assembly
+git pull
+sbt/sbt compile
+#sbt/sbt assembly
+SPARK_JAR=$(sbt/sbt assembly | grep "Packaging" | sed 's/ .* \(\/.*\) .../\1/' | sed 's/\[.*\]//')
+#sbt/sbt package  ??
+~/mesos-ec2/copy-dir /root/spark
 
 #install codepy and numpy
 cd /root
@@ -41,9 +46,12 @@ cd ..
 wget http://jackson.codehaus.org/1.9.6/jackson-all-1.9.6.jar
 unzip jackson-all-1.9.6.jar
 
+#make sure scala is on PATH
+echo "export PATH=$PATH:/root/scala-2.9.2/bin" >> /root/.bash_profile
 
-#point classpath to spark, avro,etc
-echo "export CLASSPATH=\$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.4-SNAPSHOT.jar" >> /root/.bash_profile
+#point CLASSPATH to spark, avro,etc
+#echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.6.2-SNAPSHOT.jar" >> /root/.bash_profile
+echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:$SPARK_JAR" >> /root/.bash_profile
 
 #store MASTER node address
 echo "export MASTER=master@$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):5050" >> /root/.bash_profile
@@ -55,11 +63,13 @@ mkdir /root/enron_example/models
 cd /root/enron_example/models
 wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
 wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
+wget https://s3.amazonaws.com/entire_corpus/train_model.avro
 
 mkdir /root/enron_example/data
 cd /root/enron_example/data
 wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
 wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
+wget https://s3.amazonaws.com/entire_corpus/seq_test
 
 /root/mesos-ec2/copy-dir /root/enron_example
 

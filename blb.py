@@ -53,9 +53,9 @@ class BLB:
 
     def run(self, *data):
         if self.pure_python:
-            self.run_python(data)
+            return self.run_python(data)
     	elif self.with_scala:
-    	    self.run_distributed(data)
+    	    return self.run_distributed(data)
         else:
             f = self.fingerprint(data)
             mod = None

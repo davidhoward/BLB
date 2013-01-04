@@ -58,9 +58,9 @@ class SVMVerifierBLB(BLB):
 class SVMVerifierBLBTest(unittest.TestCase):
 
     def test(self):
-        test_blb = SVMVerifierBLB(25, 50, .6, with_scala=True)    
-        result = test_blb.run('/root/enron_example/data/seq113ktest',\
-                              '/root/enron_example/models/comp113kmodel.avro')
+        test_blb = SVMVerifierBLB(25, 50, .7, with_scala=True)    
+        result = test_blb.run('/root/enron_example/data/seq_test',\
+                              '/root/enron_example/models/train_model.avro')
 	#Note: Spark will likely hang after the completion of the calculation and the following line will not be reached
         print 'FINAL RESULT IS:', result  
 

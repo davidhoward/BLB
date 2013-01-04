@@ -150,8 +150,6 @@ def run(email_filename: String, model_filename:String, DIM: Int,
     }).collect()
 
     var result = average(subsamp_estimates)
-    System.err.println()
-    System.err.println("RESULT is:" + result)
     return result
 }
 
