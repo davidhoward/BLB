@@ -78,9 +78,11 @@ def custom_dot(model: ArrayList[Float], email: Email): Double ={
 def run(email_filename: String, model_filename:String, DIM: Int,
                         num_subsamples:Int, num_bootstraps:Int, subsample_len_exp:Double):Double={
 
-    // probably want to set parallelism to num_nodes * num_cores/node
-    val NUM_TASKS = "8"
+    // probably want to set parallelism to num_nodes * num_cores/node * 2 (or 3)
+    val NUM_TASKS = "16"
     System.setProperty("spark.default.parallelism", NUM_TASKS)
+    System.setProperty("spark.serializer", "spark.KryoSerializer")
+    System.setProperty("spark.kryo.registrator", "MyRegistrator")
 
     // SOURCE_LOC is set to the file_path of the jar containing the necessary files in /asp/jit/scala_module.py
     // DEPEND_LOC is set to the file_path of the jar containing the necessary dependencies for the BLB app

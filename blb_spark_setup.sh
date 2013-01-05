@@ -8,8 +8,8 @@ git clone git://github.com/davidhoward/BLB.git
 cd /root/spark
 git pull
 sbt/sbt compile
-#sbt/sbt assembly
-SPARK_JAR=$(sbt/sbt assembly | grep "Packaging" | sed 's/ .* \(\/.*\) .../\1/' | sed 's/\[.*\]//')
+sbt/sbt assembly
+#SPARK_JAR=$(sbt/sbt assembly | grep "Packaging" | sed 's/ .* \(\/.*\) .../\1/' | sed 's/\[.*\]/ /')
 #sbt/sbt package  ??
 ~/mesos-ec2/copy-dir /root/spark
 
@@ -50,8 +50,8 @@ unzip jackson-all-1.9.6.jar
 echo "export PATH=$PATH:/root/scala-2.9.2/bin" >> /root/.bash_profile
 
 #point CLASSPATH to spark, avro,etc
-#echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.6.2-SNAPSHOT.jar" >> /root/.bash_profile
-echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:$SPARK_JAR" >> /root/.bash_profile
+echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.6.2-SNAPSHOT.jar" >> /root/.bash_profile
+#echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:$SPARK_JAR" >> /root/.bash_profile
 
 #store MASTER node address
 echo "export MASTER=master@$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):5050" >> /root/.bash_profile
@@ -85,6 +85,7 @@ cp -r /root/asp/asp/avro_inter/* /root/avro
 cd /root/BLB/
 chmod +x run_dist_tests.sh
 scalac -d distr_support/ distr_support/custom_data.scala
+scalac -d distr_support/ distr_support/MyRegistrator.scala
 
 chmod +x /root/BLB/distr_support/make_dependency_jar
 chmod +x /root/asp/asp/jit/make_source_jar
