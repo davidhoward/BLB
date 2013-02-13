@@ -11,7 +11,7 @@ class Email extends Serializable{
 	
 }
 
-class EmailBootstrapData extends Serializable{
+class BootstrapData extends Serializable{
 	var emails = List[Email]()
 	var models = List[ArrayList[Float]]()
 	
