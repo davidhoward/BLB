@@ -12,9 +12,9 @@ class SVMVerifierBLB(BLB):
         num_emails = 0
         num_models = len(models)
         for email in emails:
-            weight = email.get_weight()
+            weight = email.weight
             num_emails += weight
-            tag = email.get_tag()
+            tag = email.tag
             choice = 0
             max_match = -1.0
             for i in range(num_models):

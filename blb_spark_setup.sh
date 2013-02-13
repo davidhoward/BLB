@@ -50,7 +50,7 @@ unzip jackson-all-1.9.6.jar
 echo "export PATH=$PATH:/root/scala-2.9.2/bin" >> /root/.bash_profile
 
 #point CLASSPATH to spark, avro,etc
-echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.6.2-SNAPSHOT.jar" >> /root/.bash_profile
+echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.6.3-SNAPSHOT.jar" >> /root/.bash_profile
 #echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:$SPARK_JAR" >> /root/.bash_profile
 
 #store MASTER node address
@@ -64,12 +64,14 @@ cd /root/enron_example/models
 wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
 wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
 wget https://s3.amazonaws.com/entire_corpus/train_model.avro
+wget https://s3.amazonaws.com/icsi_blb/icsi_model.avro
 
 mkdir /root/enron_example/data
 cd /root/enron_example/data
 wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
 wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
 wget https://s3.amazonaws.com/entire_corpus/seq_test
+wget https://s3.amazonaws.com/icsi_blb/icsi_seq_test
 
 /root/mesos-ec2/copy-dir /root/enron_example
 
@@ -85,7 +87,7 @@ cp -r /root/asp/asp/avro_inter/* /root/avro
 cd /root/BLB/
 chmod +x run_dist_tests.sh
 scalac -d distr_support/ distr_support/custom_data.scala
-scalac -d distr_support/ distr_support/MyRegistrator.scala
+scalac -d distr_support/ distr_support/kryoreg.scala
 
 chmod +x /root/BLB/distr_support/make_dependency_jar
 chmod +x /root/asp/asp/jit/make_source_jar

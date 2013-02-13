@@ -42,7 +42,8 @@ def formatEmail(input: String): Email={
 *  formatting of the input data can be done here
 *  note that the input types may have to be adjusted
 **/
-def formatInputItem(input: String): Email={
+def formatInputItem(input: String): 
+    Email={
         return formatEmail(input)
 }
 
@@ -51,16 +52,18 @@ def formatInputItem(input: String): Email={
  * compressed email vector stored in the Email class
 **/
 def custom_dot(model: ArrayList[Float], email: Email): Double ={
-    var email_indices = email.get_vec_indices()
-    var email_weights = email.get_vec_weights()
+    var email_indices = email.vec_indices
+    var email_weights = email.vec_weights
     var total =0.0
     var email_index = 0.0
     var email_weight = 0.0
     var model_index = -1.0
     var model_weight =0.0
-    var model_index_counter = -2
+    var model_index_counter = -2 
+    var i = 0
 
-    for (i <- Range(0, email_indices.length)){
+    //for (i <- Range(0, email_indices.length)){
+    while (i < email_indices.length){
             email_index = email_indices(i)
             while (model_index < email_index && model_index_counter+2 < model.size){
                     model_index_counter += 2
@@ -71,6 +74,7 @@ def custom_dot(model: ArrayList[Float], email: Email): Double ={
                     model_weight = model.get(model_index_counter+1)
                     total += email_weight * model_weight
             }
+	i += 1
     }
     return total
 }
