@@ -89,6 +89,7 @@ chmod +x run_dist_tests.sh
 scalac -d distr_support/ distr_support/custom_data.scala
 scalac -d distr_support/ distr_support/kryoreg.scala
 
+mkdir /root/BLB/distr_support/dependencies 
 chmod +x /root/BLB/distr_support/make_dependency_jar
 chmod +x /root/asp/asp/jit/make_source_jar
 
