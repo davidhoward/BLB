@@ -61,17 +61,17 @@ source /root/.bash_profile
 mkdir /root/enron_example
 mkdir /root/enron_example/models
 cd /root/enron_example/models
-wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
-wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
-wget https://s3.amazonaws.com/entire_corpus/train_model.avro
-wget https://s3.amazonaws.com/icsi_blb/icsi_model.avro
+#wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
+#wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
+#wget https://s3.amazonaws.com/entire_corpus/train_model.avro
+wget "https://s3.amazonaws.com/icsi_blb/e1-15.model.java"
 
 mkdir /root/enron_example/data
 cd /root/enron_example/data
-wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
-wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
-wget https://s3.amazonaws.com/entire_corpus/seq_test
-wget https://s3.amazonaws.com/icsi_blb/icsi_seq_test
+#wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
+#wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
+#wget https://s3.amazonaws.com/entire_corpus/seq_test
+wget https://s3.amazonaws.com/icsi_blb/e1-15seq
 
 /root/mesos-ec2/copy-dir /root/enron_example
 
