@@ -110,6 +110,6 @@ class SVMVerifierBLBTest(unittest.TestCase):
 if __name__ == '__main__':
     spark_test_suite = unittest.TestSuite()
     #spark_test_suite.addTest(SVMVerifierBLBTest('test_feature_vec_classifier))
-    spark_test_suite.addTest(SVMVerifierBLBTest('test_multimedia_classifier))
-    unittest.TextTestRunner().run(suite)
+    spark_test_suite.addTest(SVMVerifierBLBTest('test_multimedia_classifier'))
+    unittest.TextTestRunner().run(spark_test_suite)
 

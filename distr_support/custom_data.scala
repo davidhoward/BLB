@@ -4,7 +4,7 @@ import java.util.ArrayList
 // input to compute_estimate
 
 class FeatureVec extends Serializable{
-	var weight = 0.0
+	var weight = 0
 	var tag = 0
 	var vec_weights = Array[Double]()
 }

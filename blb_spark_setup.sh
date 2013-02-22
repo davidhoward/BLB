@@ -58,22 +58,23 @@ echo "export MASTER=master@$(curl -s http://169.254.169.254/latest/meta-data/pub
 source /root/.bash_profile
 
 #download classifier models and data (for enron email example) from s3 and send to slave nodes
-mkdir /root/enron_example
-mkdir /root/enron_example/models
-cd /root/enron_example/models
+mkdir /root/test_examples
+mkdir /root/test_examples/models
+cd /root/test_examples/models
 #wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
 #wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
-#wget https://s3.amazonaws.com/entire_corpus/train_model.avro
-wget "https://s3.amazonaws.com/icsi_blb/e1-15.model.java"
+wget https://s3.amazonaws.com/entire_corpus/train_model.avro
+wget https://s3.amazonaws.com/icsi_blb/e1-15.model.java
+#wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java
 
-mkdir /root/enron_example/data
-cd /root/enron_example/data
+mkdir /root/test_examples/data
+cd /root/test_examples/data
 #wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
 #wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
-#wget https://s3.amazonaws.com/entire_corpus/seq_test
+wget https://s3.amazonaws.com/entire_corpus/seq_test
 wget https://s3.amazonaws.com/icsi_blb/e1-15seq
 
-/root/mesos-ec2/copy-dir /root/enron_example
+/root/mesos-ec2/copy-dir /root/test_examples
 
 #compile some java/scala files and send to slave nodes
 cd /root/asp/asp/avro_inter

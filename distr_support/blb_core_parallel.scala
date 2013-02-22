@@ -1,6 +1,8 @@
 import java.util.ArrayList;
 import spark._
 import SparkContext._
+import scala.io._
+import java.io._
 import javro.scala_arr
 import javro.JAvroInter
 import org.apache.hadoop.io._
@@ -12,9 +14,11 @@ import org.apache.avro.generic.GenericRecord;
 /**
 *  converts featureVec from string format into FeatureVec class
 **/
-def formatCompressedFeatureVec(input: String): FeatureVec={
+
+/**
+def formatCompressedFeatureVec(input: String): CompressedFeatureVec={
         var vector = input.split(" ")
-        var featureVec = new FeatureVec()
+        var featureVec = new CompressedFeatureVec()
         featureVec.vec_indices = new Array[Int](vector.length-1)
         featureVec.vec_weights = new Array[Int](vector.length-1)
 
@@ -37,7 +41,7 @@ def formatCompressedFeatureVec(input: String): FeatureVec={
         }
         return featureVec
 }
-
+**/
 def formatFeatureVec(input: String): FeatureVec={
         var vector = input.split(" ")
         var featureVec = new FeatureVec()
@@ -75,7 +79,7 @@ def formatInputItem(input: String): FeatureVec={
 **/
 
 /**
-def custom_dot_both_compressed(model: ArrayList[Float], featureVec: FeatureVec): Double ={
+def custom_dot_both_compressed(model: ArrayList[Float], featureVec: FeatureVec): Float ={
     var featureVec_indices = featureVec.vec_indices
     var featureVec_weights = featureVec.vec_weights
     var total =0.0
@@ -98,13 +102,13 @@ def custom_dot_both_compressed(model: ArrayList[Float], featureVec: FeatureVec):
                     model_weight = model.get(model_index_counter+1)
                     total += featureVec_weight * model_weight
             }
-	i += 1
+    i += 1
     }
     return total
 }
 **/
 
-    def custom_dot_uncompressed(model:Array[Double], featureVec:FeatureVec): Double = {
+    def custom_dot_uncompressed(model:Array[Float], featureVec:FeatureVec): Double = {
         var featureVec_weights = featureVec.vec_weights
         var total =0.0
         var featureVec_weight = 0.0
@@ -119,11 +123,11 @@ def custom_dot_both_compressed(model: ArrayList[Float], featureVec: FeatureVec):
         return total*model_weight
     }
 
-def readVecs(filename: String): Array[Array[Array[Double]]]= {
-	var f_in: FileInputStream = new FileInputStream(filename)
-	var obj_in: ObjectInputStream = new ObjectInputStream(f_in)
-	var modelMatrix: Array[Array[Array[Double]]] = obj_in.readObject().asInstanceOf[Array[Array[Array[Double]]]]
-	return modelMatrix
+def readModels(filename: String): Array[Array[Array[Float]]]= {
+    var f_in: FileInputStream = new FileInputStream(filename)
+    var obj_in: ObjectInputStream = new ObjectInputStream(f_in)
+    var modelMatrix: Array[Array[Array[Float]]] = obj_in.readObject().asInstanceOf[Array[Array[Array[Float]]]]
+    return modelMatrix
 }
 
 def run(data_filename: String, model_filename:String, DIM: Int,
@@ -133,7 +137,10 @@ def run(data_filename: String, model_filename:String, DIM: Int,
     val NUM_TASKS = "16"
     System.setProperty("spark.default.parallelism", NUM_TASKS)
     System.setProperty("spark.serializer", "spark.KryoSerializer")
+    System.setProperty("spark.rdd.compress", "true")
     System.setProperty("spark.kryo.registrator", "MyRegistrator")
+    System.setProperty("spark.storage.StorageLevel", "MEMORY_ONLY_SER")
+    System.setProperty("spark.kryoserializer.buffer.mb", "340")
 
     // SOURCE_LOC is set to the file_path of the jar containing the necessary files in /asp/jit/scala_module.py
     // DEPEND_LOC is set to the file_path of the jar containing the necessary dependencies for the BLB app
@@ -145,16 +152,17 @@ def run(data_filename: String, model_filename:String, DIM: Int,
 
     val distData = sc.sequenceFile[Int, String](data_filename)
 
-	/**
+    /**
     val reader =(new JAvroInter("res.avro", "args.avro")).readModel(model_filename)
     var models_arr = List[java.util.ArrayList[Float]]()
     while (reader.hasNext()){
         models_arr = models_arr :+ new ArrayList(reader.next().get(1).asInstanceOf[org.apache.avro.generic.GenericData.Array[Float]].asInstanceOf[java.util.List[Float]])
    }
-	**/
-	
-	val models_arr: Array[Array[Array[Double]]] = readModelsVec(model_filename)
-    val models = sc.broadcast(models_arr)
+    **/
+    
+    val models_arr: Array[Array[Array[Float]]] = readModels(model_filename)
+    //val models_arr: Array[Array[Array[Float]]] = new Array[Array[Array[Float]]](3)
+        val models = sc.broadcast(models_arr)
 
     val data_count = distData.count().asInstanceOf[Int]
     val broadcast_data_count = sc.broadcast(data_count)
@@ -210,4 +218,3 @@ def run(data_filename: String, model_filename:String, DIM: Int,
     var result = average(subsamp_estimates)
     return result
 }
-
