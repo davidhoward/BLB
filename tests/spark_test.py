@@ -97,14 +97,14 @@ class SVMVerifierBLBTest(unittest.TestCase):
 
     def test_feature_vec_classifier(self): 
         test_blb = SVMfeature_vecVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run('/root/enron_example/data/seq_test',\
-                              '/root/enron_example/models/train_model.avro')
+        result = test_blb.run('/root/test_examples/data/seq_test',\
+                              '/root/test_examples/models/train_model.avro')
         print 'FINAL RESULT IS:', result  
 
     def test_multimedia_classifier(self): 
         test_blb = SVMMultimediaVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run('/root/enron_example/data/e1-15seq',\
-                              '/root/enron_example/models/e1-15double.model.java')
+        result = test_blb.run('/root/test_examples/data/e1-15seq',\
+                              '/root/test_examples/models/e1-15.model.java')
         print 'FINAL RESULT IS:', result  
 
 if __name__ == '__main__':
