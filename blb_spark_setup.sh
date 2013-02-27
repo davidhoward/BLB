@@ -63,16 +63,14 @@ mkdir /root/test_examples/models
 cd /root/test_examples/models
 #wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
 #wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
-wget https://s3.amazonaws.com/entire_corpus/train_model.avro
-wget https://s3.amazonaws.com/icsi_blb/e1-15.model.java
+wget https://s3.amazonaws.com/1.2milemails/model.avro
 #wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java
 
 mkdir /root/test_examples/data
 cd /root/test_examples/data
 #wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
 #wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
-wget https://s3.amazonaws.com/entire_corpus/seq_test
-wget https://s3.amazonaws.com/icsi_blb/e1-15seq
+#wget https://s3.amazonaws.com/entire_corpus/seq_test
 
 /root/mesos-ec2/copy-dir /root/test_examples
 
