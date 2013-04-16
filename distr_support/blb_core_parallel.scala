@@ -65,12 +65,22 @@ def formatFeatureVec(input: String): FeatureVec={
         return featureVec
 }
 
+def formatNGramRow(input: String): NGramRow ={
+    var ngramrow = new NGramRow()
+    ngramrow.weight = 0
+    ngramrow.year_counts = input
+    return ngramrow
+}
 /**
 *  formatting of the input data can be done here
 *  note that the input types may have to be adjusted
 **/
-def formatInputItem(input: String): FeatureVec={
-        return formatFeatureVec(input)
+
+//make this so that FeatureVec isn't hard coded in
+// def formatInputItem(input: String): FeatureVec={
+def formatInputItem(input: String): NGramRow={
+        //return formatFeatureVec(input)
+        return formatNGramRow(input)
 }
 
 /**
@@ -108,20 +118,19 @@ def custom_dot_both_compressed(model: ArrayList[Float], featureVec: FeatureVec):
 }
 **/
 
-    def custom_dot_uncompressed(model:Array[Float], featureVec:FeatureVec): Double = {
-        var featureVec_weights = featureVec.vec_weights
-        var total =0.0
-        var featureVec_weight = 0.0
-        var model_weight = model(0)
-        var i = 0
-        while (i < featureVec_weights.length){
-            featureVec_weight = featureVec_weights(i)
-            total += featureVec_weight * model(i+1)
-            i += 1
-        }
-
-        return total*model_weight
+def custom_dot_uncompressed(model:Array[Float], featureVec:FeatureVec): Double = {
+    var featureVec_weights = featureVec.vec_weights
+    var total =0.0
+    var featureVec_weight = 0.0
+    var model_weight = model(0)
+    var i = 0
+    while (i < featureVec_weights.length){
+        featureVec_weight = featureVec_weights(i)
+        total += featureVec_weight * model(i+1)
+        i += 1
     }
+    return total*model_weight
+}
 
 def readModels(filename: String): Array[Array[Array[Float]]]= {
     var f_in: FileInputStream = new FileInputStream(filename)
@@ -130,8 +139,8 @@ def readModels(filename: String): Array[Array[Array[Float]]]= {
     return modelMatrix
 }
 
-def run(data_filename: String, model_filename:String, DIM: Int,
-                        num_subsamples:Int, num_bootstraps:Int, subsample_len_exp:Double):Double={
+//def run(data_filename: String, model_filename:String, DIM: Int, num_subsamples:Int, num_bootstraps:Int, subsample_len_exp:Double):Double={
+def run(data_filename: String, DIM: Int, num_subsamples:Int, num_bootstraps:Int, subsample_len_exp:Double):Double={
 
     // probably want to set parallelism to num_nodes * num_cores/node * 2 (or 3)
     val NUM_TASKS = "16"
@@ -160,9 +169,9 @@ def run(data_filename: String, model_filename:String, DIM: Int,
    }
     **/
     
-    val models_arr: Array[Array[Array[Float]]] = readModels(model_filename)
-    //val models_arr: Array[Array[Array[Float]]] = new Array[Array[Array[Float]]](3)
-        val models = sc.broadcast(models_arr)
+    // val models_arr: Array[Array[Array[Float]]] = readModels(model_filename)
+    // val models_arr: Array[Array[Array[Float]]] = new Array[Array[Array[Float]]](3)
+    // val models = sc.broadcast(models_arr)
 
     val data_count = distData.count().asInstanceOf[Int]
     val broadcast_data_count = sc.broadcast(data_count)
@@ -171,7 +180,9 @@ def run(data_filename: String, model_filename:String, DIM: Int,
     var subsamp_estimates = distData.flatMap(item =>{
         val gen = new java.util.Random()
         var subsamp_count = 1
-        var outputs = List[(Int, FeatureVec)]()
+        //var outputs = List[(Int, FeatureVec)]()
+        // make this so i don't have to set type here (just get it from format item?)
+        var outputs = List[(Int, NGramRow)]()
         var prob =0.0
         val funcs = new run_outer_data()
 
@@ -204,8 +215,8 @@ def run(data_filename: String, model_filename:String, DIM: Int,
         }
 
         val btstrap_data = new BootstrapData()
-        btstrap_data.data = btstrap_vec.toList
-        btstrap_data.models = models.value
+        btstrap_data.data = btstrap_vec.to List
+        //btstrap_data.models = models.value
         val est = funcs.compute_estimate(btstrap_data)
         val subsamp_id = subsamp._1/bnum_bootstraps.value + 1
         (subsamp_id, est)

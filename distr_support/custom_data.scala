@@ -21,3 +21,9 @@ class BootstrapData extends Serializable{
 	var models = new Array[Array[Array[Float]]](1)
 }
 
+
+class NGramRow extends Serializable{
+	var weight = 0
+	var year_counts = ""
+}
+

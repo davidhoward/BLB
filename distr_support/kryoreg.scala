@@ -6,6 +6,7 @@ class MyRegistrator extends KryoRegistrator {
     kryo.register(classOf[FeatureVec])
     kryo.register(classOf[CompressedFeatureVec])
     kryo.register(classOf[BootstrapData])
+    kryo.register(classOf[NGramRow])
   }
 }
 

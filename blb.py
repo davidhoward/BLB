@@ -88,9 +88,9 @@ class BLB:
         scala_reduce = ast_tools.ConvertPyAST_ScalaAST().visit(self.reduce_ast)
         scala_average =  ast_tools.ConvertPyAST_ScalaAST().visit(self.average_ast)
 
-        TYPE_DECS = (['compute_estimate', ['BootstrapData'], 'double'],
-             ['reduce_bootstraps', [('list', 'double')], 'double'],
-             ['average', [('array', 'double')], 'double'])
+        TYPE_DECS = (['compute_estimate', [('list, NGramRow')], ('array', 'double')],
+             ['reduce_bootstraps', [('list', ('array', 'double'))], ('array', 'double')],
+             ['average', [('array', ('array','double'))], ('array','double')])
 
         scala_gen = SourceGenerator(TYPE_DECS)
         rendered_scala_input_funcs = scala_gen.to_source(scala_estimate)+'\n' + scala_gen.to_source(scala_reduce) \
@@ -108,8 +108,9 @@ class BLB:
         os.environ['DEPEND_LOC'] = '/root/BLB/distr_support/dependencies/' + time_stamp +'/depend.jar'
 
         email_filename = data[0]
-        model_filename = data[1]
-        return mod.run_outer(email_filename, model_filename, self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+        #model_filename = data[1]
+        #return mod.run_outer(email_filename, model_filename, self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+        return mod.run_outer(email_filename, self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
 
     def prepend_scala_blb_core_funcs(self, blb_input_funcs):
         blb_core_funcs = (open('distr_support/blb_core_parallel.scala')).read()
