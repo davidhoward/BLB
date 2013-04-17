@@ -81,7 +81,7 @@ class SVMMultimediaVerifierBLB(BLB):
                 if (class_scores[i] < thresholds[i] and tag == i):
                     missed_detections[tag] += weight
 
-        return [md_count *1.0 / occurrences for md_count, occurrences in zip(missed_detections, class_occurrences)]
+        return [md_count_occurrences_tup[0] *1.0 / md_count_occurrences_tup[1] for md_count_occurrences_tup in zip(missed_detections, class_occurrences)]
 
     #should change this to take standard deviation 
     def reduce_bootstraps(bootstraps):
@@ -100,87 +100,97 @@ class SVMMultimediaVerifierBLB(BLB):
 
 class NGramRatiosBLB(BLB):
     def compute_estimate(btstrap_data):
-        """
-        get total occurrences per decade 
-        calculate top 50 ratios
-
-        assume btstrap_data contains rows 
-        should i make each sample contain all of an NGram
-            or just allow parts of it (year ?)
-        should probably make all of an ngram part of it
-            because otherwise will hardly be able to compare 
-            any words 
-        thus each row will be of the format
-        ngram\tyear occurrences\tyear occurrences\tyear occurrences ...
-        """
-        #should take out dependency on 11 and 12 to var at beginning 
-        #obtain total number of occurrences per decade 
         BEGINNING_DECADE = 1890
         TOTAL_DECADES = (2010-BEGINNING_DECADE)/10
         NUM_TOP_RATIOS = 50
+        MIN_FREQUENCY_THRESH = 0.000001
 
-        ngram_tab_split = []
-        year_split = []
-        ngram = ""
+        #obtain total number of occurrences per decade 
+        ngram_tab_split=['']
+        year_split=['']
+        occurrences = 0.0
+        year = 0
+
         decade_total_occurrences  = [0.0] * TOTAL_DECADES
         decadeIndex = 0
         for ngram_row in btstrap_data:
-            ngram_tab_split = ngram_row.split("\t")
+            ngram_tab_split = ngram_row.year_counts.split("\t")
             ngram = ngram_tab_split[0]
-            for year_count in ngram_tab_split[1:]
+            for year_count in ngram_tab_split[1:len(ngram_tab_split)]:
                 year_split = year_count.split(' ')
                 year = int(year_split[0])
-                occurrences = int(year_split[1])
+                occurrences = int(year_split[1]) * ngram_row.weight
                 if year >= BEGINNING_DECADE:
-                    decadeIndex = int((year/ 100.0 - BEGINNING_DECADE/10.0) * 10.0)
+                    decadeIndex = int((year/ 100.0 - BEGINNING_DECADE/100.0) * 10.0)
                     decade_total_occurrences[decadeIndex] += occurrences
 
-        #now get top ratios 
-        #don't need to put (word, ratio) in queue, just ratio 
-        MIN_FREQUENCY_THRESH = 0.000001
-        top_n_ratios_per_decade = [] 
-        for i in range(TOTAL_DECADES-1):
-            top_n_ratios_per_decade.append(PriorityQueue())
+        #obtain word frequency ratios between decades 
+        top_n_ratios_per_decade = [PriorityQueue() for i in range(TOTAL_DECADES -1)]
+
         decade_ratio_mins = [0.0] * (TOTAL_DECADES-1)
         ngram_decade_frequency = [0.0] * TOTAL_DECADES
-        ngram_decade_occurrences = [0] * TOTAL_DECADES
-        decade_count =0
-        ratio = 0.0
+        ngram_decade_occurrences = [0.0] * TOTAL_DECADES
 
         for ngram_row in btstrap_data:
-            ngram_tab_split = ngram_row.split("\t")
-            for year_count in ngram_tab_split[1:]
+            ngram_tab_split = ngram_row.year_counts.split("\t")
+            for year_count in ngram_tab_split[1:len(ngram_tab_split)]:
                 year_split = year_count.split(' ')
                 year = int(year_split[0])
-                occurrences = int(year_split[1])
+                occurrences = int(year_split[1]) * ngram_row.weight
                 if year >= BEGINNING_DECADE:
-                    decadeIndex = int((year/ 100.0 - BEGINNING_DECADE/10.0) * 10.0)
+                    decadeIndex = int((year/ 100.0 - BEGINNING_DECADE/100.0) * 10.0)
                     ngram_decade_occurrences[decadeIndex] += occurrences 
 
             for decadeIndex in range(1,len(decade_total_occurrences)):
-                if (decade_total_occurrences[decadeIndex] > 0 and decade_total_occurrences[decadeIndex-1] > 0 and ngram_decade_occurrences[decadeIndex] > 0 and ngram_decade_occurrences[decadeIndex] / ngram_decade_occurrences[decadeIndex] > MIN_FREQUENCY_THRESH):
+                if (decade_total_occurrences[decadeIndex] > 0 and decade_total_occurrences[decadeIndex-1] > 0 and ngram_decade_occurrences[decadeIndex-1] > 0 and ngram_decade_occurrences[decadeIndex] / decade_total_occurrences[decadeIndex] > MIN_FREQUENCY_THRESH):
                     ratio = (ngram_decade_occurrences[decadeIndex] / decade_total_occurrences[decadeIndex]) / (ngram_decade_occurrences[decadeIndex-1] / decade_total_occurrences[decadeIndex-1]) 
                     
-                    if ratio > decade_ratio_mins(decadeIndex-1) or top_n_ratios_per_decade[decadeIndex-1].qsize() < NUM_TOP_RATIOS:
-                        PriorityQueue.put(top_n_ratios_per_decade[decadeIndex-1], ratio)
+                    if ratio > decade_ratio_mins[decadeIndex-1]:
+                        while top_n_ratios_per_decade[decadeIndex-1].qsize() < NUM_TOP_RATIOS and ngram_row.weight > 0:
+                            PriorityQueue.put(top_n_ratios_per_decade[decadeIndex-1], ratio)
 
-                        if (top_n_ratios_per_decade[decadeIndex-1].qsize() >= NUM_TOP_RATIOS):
-                            PriorityQueue.get(top_n_ratios_per_decade[decadeIndex-1])
-                        lowest_ratio = PriorityQueue.get(top_n_ratios_per_decade[decadeIndex-1])
-                        decade_ratio_mins[decadeIndex-1] = lowest_ratio
-                        PriorityQueue.put(top_n_ratios_per_decade[decadeIndex-1], lowest_ratio)
+                            if (top_n_ratios_per_decade[decadeIndex-1].qsize() >= NUM_TOP_RATIOS):
+                                PriorityQueue.get(top_n_ratios_per_decade[decadeIndex-1])
+                            lowest_ratio = PriorityQueue.get(top_n_ratios_per_decade[decadeIndex-1])
+                            decade_ratio_mins[decadeIndex-1] = lowest_ratio
+                            PriorityQueue.put(top_n_ratios_per_decade[decadeIndex-1], lowest_ratio)
+                            ngram_row.weight -= 1
 
             ngram_decade_occurrences = [0.0] * TOTAL_DECADES
+    
+        decade_ratios_arr = [0.0] * (TOTAL_DECADES-1)
+        count = 0
+        for queue in top_n_ratios_per_decade:
+            ratios_summed = 0.0
+            for i in range(NUM_TOP_RATIOS): 
+                if top_n_ratios_per_decade[count].qsize() > 0:
+                    ratios_summed += PriorityQueue.get(top_n_ratios_per_decade[count])
 
-        #will need to convert priority queue to array here  
-        return top_n_ratios_per_decade
+            decade_ratios_arr[count] = ratios_summed / NUM_TOP_RATIOS
+            count += 1
+        return decade_ratios_arr
 
     def reduce_bootstraps(bootstraps):
-        #find median ratio ?
-        pass
+        decade_ratios = [0.0] * len(bootstraps)
+        std_dev_ratios = [0.0] * len(bootstraps[0])
+        for i in range(len(bootstraps[0])):
+            count = 0
+            for cross_decades in bootstraps:
+                decade_ratios[count] = cross_decades[i] 
+                count += 1 
+            std_dev_ratios[i] = scala_lib.std_dev(decade_ratios)
+        return std_dev_ratios
 
     def average(subsamples):
-        pass
+        decade_std_devs = [0.0] * len(subsamples)
+        avg_std_dev_ratios = [0.0] * len(subsamples[0])
+        for i in range(len(subsamples[0])):
+            count = 0
+            for cross_decades in subsamples:
+                decade_std_devs[count] = cross_decades[i] 
+                count += 1 
+            avg_std_dev_ratios[i] = scala_lib.mean(decade_std_devs)
+        return avg_std_dev_ratios     
 
 class SVMVerifierBLBTest(unittest.TestCase):
     def test_feature_vec_classifier(self): 
@@ -197,13 +207,13 @@ class SVMVerifierBLBTest(unittest.TestCase):
 
     def test_ngram_ratio_calculator(self):
         test_blb = SVMMultimediaVerifierBLB(25, 50, .7, with_scala=True)
-        result = test_blb.run()
+        result = test_blb.run('/root/test_examples/data/10_percent_cleaned_blb.seq')
         print 'FINAL RESULT IS:', result  
-
 
 if __name__ == '__main__':
     spark_test_suite = unittest.TestSuite()
     #spark_test_suite.addTest(SVMVerifierBLBTest('test_feature_vec_classifier))
-    spark_test_suite.addTest(SVMVerifierBLBTest('test_multimedia_classifier'))
+    #spark_test_suite.addTest(SVMVerifierBLBTest('test_multimedia_classifier'))
+    spark_test_suite.addTest(SVMVerifierBLBTest('test_ngram_ratio_calculator'))
     unittest.TextTestRunner().run(spark_test_suite)
 

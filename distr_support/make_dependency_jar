@@ -5,6 +5,7 @@ cp /root/BLB/distr_support/FeatureVec.class $1
 cp /root/BLB/distr_support/CompressedFeatureVec.class $1
 cp /root/BLB/distr_support/BootstrapData.class $1
 cp /root/BLB/distr_support/MyRegistrator.class $1
+cp /root/BLB/distr_support/NGramRow.class $1
 
 cp -r /root/avro/* $1
 
