@@ -88,7 +88,7 @@ class BLB:
         scala_reduce = ast_tools.ConvertPyAST_ScalaAST().visit(self.reduce_ast)
         scala_average =  ast_tools.ConvertPyAST_ScalaAST().visit(self.average_ast)
 
-        TYPE_DECS = (['compute_estimate', [('list, NGramRow')], ('array', 'double')],
+        TYPE_DECS = (['compute_estimate', [('list', 'NGramRow')], ('array', 'double')],
              ['reduce_bootstraps', [('list', ('array', 'double'))], ('array', 'double')],
              ['average', [('array', ('array','double'))], ('array','double')])
 

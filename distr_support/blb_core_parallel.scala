@@ -3,13 +3,13 @@ import spark._
 import SparkContext._
 import scala.io._
 import java.io._
-import javro.scala_arr
 import javro.JAvroInter
 import org.apache.hadoop.io._
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
+import scala.collection.mutable.PriorityQueue
 
 /**
 *  converts featureVec from string format into FeatureVec class
@@ -139,8 +139,7 @@ def readModels(filename: String): Array[Array[Array[Float]]]= {
     return modelMatrix
 }
 
-//def run(data_filename: String, model_filename:String, DIM: Int, num_subsamples:Int, num_bootstraps:Int, subsample_len_exp:Double):Double={
-def run(data_filename: String, DIM: Int, num_subsamples:Int, num_bootstraps:Int, subsample_len_exp:Double):Double={
+def run(data_filename: String, DIM: Int, num_subsamples:Int, num_bootstraps:Int, subsample_len_exp:Double):Array[Double]={
 
     // probably want to set parallelism to num_nodes * num_cores/node * 2 (or 3)
     val NUM_TASKS = "16"
@@ -214,10 +213,10 @@ def run(data_filename: String, DIM: Int, num_subsamples:Int, num_bootstraps:Int,
                 btstrap_vec(i).weight = subsamp_weights(i)
         }
 
-        val btstrap_data = new BootstrapData()
-        btstrap_data.data = btstrap_vec.to List
+        //val btstrap_data = new BootstrapData()
+        //btstrap_data.data = btstrap_vec.toList
         //btstrap_data.models = models.value
-        val est = funcs.compute_estimate(btstrap_data)
+        val est = funcs.compute_estimate(btstrap_vec.toList)
         val subsamp_id = subsamp._1/bnum_bootstraps.value + 1
         (subsamp_id, est)
 
@@ -229,3 +228,4 @@ def run(data_filename: String, DIM: Int, num_subsamples:Int, num_bootstraps:Int,
     var result = average(subsamp_estimates)
     return result
 }
+

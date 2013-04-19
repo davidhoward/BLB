@@ -206,8 +206,8 @@ class SVMVerifierBLBTest(unittest.TestCase):
         print 'FINAL RESULT IS:', result  
 
     def test_ngram_ratio_calculator(self):
-        test_blb = SVMMultimediaVerifierBLB(25, 50, .7, with_scala=True)
-        result = test_blb.run('/root/test_examples/data/10_percent_cleaned_blb.seq')
+        test_blb = NGramRatiosBLB(25, 50, .7, with_scala=True)
+        result = test_blb.run('/mnt/test_examples/data/10_percent_cleaned_blb.seq')
         print 'FINAL RESULT IS:', result  
 
 if __name__ == '__main__':
