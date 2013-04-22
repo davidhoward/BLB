@@ -51,6 +51,7 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
                 }
                 subsampCount += 1
         }
+
         outputs
     }).groupByKey().map(subsamp => {
         //val funcs = new run_outer_data()

@@ -74,7 +74,8 @@ if [ $APP == "multimedia" ] ; then
 	wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java
 
 	cd /mnt/test_examples/data
-	wget https://s3.amazonaws.com/icsi_blb/20percentE1-15.seq
+	wget https://s3.amazonaws.com/icsi_blb/20percente1-15.seq
+	#wget https://s3.amazonaws.com/icsi_blb/500e1-15.seq
 	#wget https://s3.amazonaws.com/icsi_blb/e1-15seq
 
 elif [ $APP = "email" ]; then
@@ -98,20 +99,18 @@ fi
 #compile some java/scala files and send to slave nodes
 cd /root/asp/asp/avro_inter
 scalac scala_lib.scala
-javac -d JAvroInter.java
+javac JAvroInter.java
 
 cp -r /root/asp/asp/avro_inter/* /root/avro
 /root/spark-ec2/copy-dir /root/avro
 
 #add permissions, and compile another scala file
-
 cd /root/BLB/distributed/apps/$APP/
 scalac *.scala
 cd /root/BLB/distributed/
 scalac kryoreg.scala
 
 mkdir /root/BLB/distributed/dependencies 
-
 chmod +x /root/BLB/distributed/make_dependency_jar /root/asp/asp/jit/make_source_jar /root/BLB/run_dist_tests.sh
 
 

@@ -59,14 +59,13 @@ class SVMEmailVerifierBLB(BLB):
         return mean/len(subsamples)
 
 class SVMMultimediaVerifierBLB(BLB):
-    #calculates number of missed detections for all classes 
 
     TYPE_DECS = (['compute_estimate', ['BootstrapData'], ('array', 'double')],
          ['reduce_bootstraps', [('array', ('array', 'double'))], ('array','double')],
          ['average', [('array', ('array','double'))], ('array', 'double')],
          ['run', [('array', ('array','double'))], ('list','double')])
 
-
+    #calculates missed detection percentage for all classes 
     def compute_estimate(btstrap_data):
         models = btstrap_data.models
         num_models = len(models)
@@ -76,32 +75,94 @@ class SVMMultimediaVerifierBLB(BLB):
         class_scores = [0.0] * num_models
         for feature_vec in btstrap_data.data:
             tag = feature_vec.tag
-            weight = feature_vec.weight
-            class_occurrences[tag] += weight
-            choice = 0
-            max_match = -1.0
-            for i in range(num_models):
-                model = models[i]  
-                first = True
-                class_scores[i] = 0.0
-                for sub_model in model:
-                    if first: 
-                        class_thresholds[i] = sub_model[0]
-                        first = False
-                    else:
-                        class_scores[i] += HelperFuncs.custom_dot_uncompressed(sub_model, feature_vec)
-                if (class_scores[i] < class_thresholds[i] and tag == i):
-                    missed_detections[tag] += weight
+            if tag > 0:
+                weight = feature_vec.weight
+                class_occurrences[tag-1] += weight
+                choice = 0
+                max_match = -1.0
+                for i in range(num_models):
+                    model = models[i]  
+                    first = True
+                    class_scores[i] = 0.0
+                    for sub_model in model:
+                        if first: 
+                            class_thresholds[i] = sub_model[0]
+                            first = False
+                        else:
+                            class_scores[i] += HelperFuncs.custom_dot_uncompressed(sub_model, feature_vec)
+                    if (class_scores[i] < class_thresholds[i] and tag == i+1):
+                        missed_detections[tag-1] += weight
+        for i in range(len(class_occurrences)):
+            if class_occurrences[i] == 0:
+                class_occurrences[i] = 1
         return [md_count_occurrences_tup[0] *1.0 / md_count_occurrences_tup[1] for md_count_occurrences_tup in zip(missed_detections, class_occurrences)]
 
-    #should change this to take standard deviation 
+    # TYPE_DECS = (['compute_estimate', ['BootstrapData'], ('array', ('array', 'double'))],
+
+    #      ['reduce_bootstraps', [('array', ('array', 'double'))], ('array','double')],
+    #      ['average', [('array', ('array','double'))], ('array', 'double')],
+    #      ['run', [('array', ('array','double'))], ('list','double')])
+
+    #calculates missed detection AND false alarm percentage for all classes 
+    # def compute_estimate(btstrap_data):
+    #     models = btstrap_data.models
+    #     num_models = len(models)
+    #     class_occurrences = [0] * num_models
+    #     missed_detections= [0] * num_models
+    #     false_alarms= [0] * num_models
+    #     class_thresholds = [0.0] * num_models
+    #     class_scores = [0.0] * num_models
+    #     total_files = 0.0
+    #     for feature_vec in btstrap_data.data:
+    #         tag = feature_vec.tag
+    #         if tag < 16:
+    #             class_occurrences[tag-1] += weight
+    #         total_files += weight
+    #         weight = feature_vec.weight
+    #         choice = 0
+    #         max_match = -1.0
+    #         for i in range(num_models):
+    #             model = models[i]  
+    #             first = True
+    #             class_scores[i] = 0.0
+    #             for sub_model in model:
+    #                 if first: 
+    #                     class_thresholds[i] = sub_model[0]
+    #                     first = False
+    #                 else:
+    #                     class_scores[i] += HelperFuncs.custom_dot_uncompressed(sub_model, feature_vec)
+    #             if (class_scores[i] < class_thresholds[i] and tag == i+1):
+    #                 missed_detections[tag-1] += weight
+    #             elif (score >= thresholds[predicted_class-1] and tag != i+1):
+    #                 false_alarms[tag-1] += weight
+
+    #     md_rates = [md_count_occurrences_tup[0] *1.0 / md_count_occurrences_tup[1] for md_count_occurrences_tup in zip(missed_detections, class_occurrences)]
+    #     fa_rates = [fa_count_occurrences_tup[0] *1.0 / (total_files - md_count_occurrences_tup[1]) for fa_count_occurrences_tup in zip(false_alarms, class_occurrences)]
+    # might be better if i do tuples ?
+    #     return zip(md_rates, fa_rates)
+
+
+    #computes mean md_ratio
+    # def reduce_bootstraps(bootstraps):
+    #     md_percent_sums = [0.0] * len(bootstraps[0])
+    #     for bootstrap in bootstraps:
+    #         for i in range(len(bootstrap)):
+    #             md_percent_sums[i] += bootstrap[i]
+    #     return [md_percent_sum *1.0 / len(bootstraps) for md_percent_sum in md_percent_sums]
+
+    #computes std dev
+
     def reduce_bootstraps(bootstraps):
-        md_percent_sums = [0.0] * len(bootstraps[0])
-        for bootstrap in bootstraps:
-            for i in range(len(bootstrap)):
-                md_percent_sums[i] += bootstrap[i]
-        return [md_percent_sum *1.0 / len(bootstraps) for md_percent_sum in md_percent_sums]
-        
+        class_md_ratios = [0.0] * len(bootstraps)
+        std_dev_md_ratios = [0.0] * len(bootstraps[0])
+        for i in range(len(bootstraps[0])):
+            count = 0
+            for md_ratios in bootstraps:
+                class_md_ratios[count] = md_ratios[i] 
+                count += 1 
+            std_dev_md_ratios[i] = scala_lib.std_dev(class_md_ratios)
+        return std_dev_md_ratios
+
     def average(subsamples):
         md_percent_sums = [0.0] * len(subsamples[0])
         for subsample in subsamples:
