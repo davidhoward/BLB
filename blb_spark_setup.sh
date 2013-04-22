@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#APP=email
+APP=multimedia
+#APP=ngrams
+echo "export APP=$APP" >> /root/.bash_profile
+
 #get general asp framework and blb specializer
 cd ~
 #git clone git://github.com/shoaibkamil/asp.git
@@ -10,12 +15,10 @@ git clone git://github.com/davidhoward/BLB.git
 #compile spark
 cd /root/spark
 # git pull
-# sbt/sbt compile
+#sbt/sbt compile
 # sbt/sbt package 
 sbt/sbt assembly
 
-#SPARK_JAR=$(sbt/sbt assembly | grep "Packaging" | sed 's/ .* \(\/.*\) .../\1/' | sed 's/\[.*\]/ /')
-#sbt/sbt package  ??
 ~/spark-ec2/copy-dir /root/spark
 
 #install codepy and numpy
@@ -39,7 +42,7 @@ cd avro-1.6.3
 python setup.py build
 python setup.py install
 
-cd ..
+cd /root/avro
 mkdir java_avro
 cd java_avro
 #wget http://www.trieuvan.com/apache/avro/avro-1.6.3/java/avro-1.6.3.jar
@@ -48,64 +51,68 @@ unzip avro-1.7.4.jar
 mv org /root/avro
 
 #install jackson (java json processor)
-cd ..
+cd /root/avro
 #wget http://jackson.codehaus.org/1.9.6/jackson-all-1.9.6.jar
 wget http://jackson.codehaus.org/1.9.11/jackson-all-1.9.11.jar
-unzip jackson-all-1.9.6.jar
+unzip jackson-all-1.9.11.jar
 
 #make sure scala is on PATH
 echo "export PATH=$PATH:/root/scala-2.9.2/bin" >> /root/.bash_profile
 
 #point CLASSPATH to spark, avro,etc
-#echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.8.0-SNAPSHOT.jar" >> /root/.bash_profile
-echo "export CLASSPATH=$CLASSPATH:/root/:.:/root/avro:/root/BLB/distr_support:/root/spark/core/target/spark-core-assembly-0.7.0.jar" >> /root/.bash_profile
-
-#echo "export CLASSPATH=$CLASSPATH:.:/root/avro:/root/BLB/distr_support:$SPARK_JAR" >> /root/.bash_profile
+echo "export CLASSPATH=$CLASSPATH:/root/:.:/root/avro:/root/BLB/distributed:/root/BLB/distributed/apps/$APP/:/root/spark/core/target/*" >> /root/.bash_profile
 
 #store MASTER node address
-#echo "export MASTER=master@$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):5050" >> /root/.bash_profile
-echo "export MASTER=mesos://$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):5050" >> /root/.bash_profile
+echo "export MASTER=spark://$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):7077" >> /root/.bash_profile
 source /root/.bash_profile
 
-#download classifier models and data (for enron email example) from s3 and send to slave nodes
-mkdir /root/test_examples
-mkdir /root/test_examples/models
-cd /root/test_examples/models
+mkdir -p /mnt/test_examples/models
+mkdir /mnt/test_examples/data
 
-#wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
-#wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
-#wget https://s3.amazonaws.com/1.2milemails/model.avro
-#wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java
+if [ $APP == "multimedia" ] ; then
+	cd /mnt/test_examples/models
+	wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java
 
-mkdir /root/test_examples/data
-cd /root/test_examples/data
-#wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
-#wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
-#wget https://s3.amazonaws.com/entire_corpus/seq_test
+	cd /mnt/test_examples/data
+	wget https://s3.amazonaws.com/icsi_blb/20percentE1-15.seq
+	#wget https://s3.amazonaws.com/icsi_blb/e1-15seq
 
-mkdir -p /mnt/test_examples/data
-cd /mnt/test_examples/data
-wget https://s3.amazonaws.com/ngrams_blb/10_percent_cleaned_blb.seq
+elif [ $APP = "email" ]; then
+	cd /mnt/test_examples/models
+	#wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
+	#wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
+	wget https://s3.amazonaws.com/1.2milemails/model.avro
 
-/root/spark-ec2/copy-dir /mnt/test_examples
+	cd /mnt/test_examples/data
+	#wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
+	#wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
+	wget https://s3.amazonaws.com/entire_corpus/seq_test
+
+elif [ $APP = "ngrams" ]; then
+	cd /mnt/test_examples/data
+	wget https://s3.amazonaws.com/ngrams_blb/10_percent_cleaned_blb.seq
+fi
+
+/root/spark-ec2/copy-dir /mnt/test_examples/
 
 #compile some java/scala files and send to slave nodes
 cd /root/asp/asp/avro_inter
 scalac scala_lib.scala
-javac -d ../avro_inter/ JAvroInter.java
+javac -d JAvroInter.java
 
 cp -r /root/asp/asp/avro_inter/* /root/avro
 /root/spark-ec2/copy-dir /root/avro
 
 #add permissions, and compile another scala file
-cd /root/BLB/
-chmod +x run_dist_tests.sh
-scalac -d distr_support/ distr_support/custom_data.scala
-scalac -d distr_support/ distr_support/kryoreg.scala
 
-mkdir /root/BLB/distr_support/dependencies 
-chmod +x /root/BLB/distr_support/make_dependency_jar
-chmod +x /root/asp/asp/jit/make_source_jar
+cd /root/BLB/distributed/apps/$APP/
+scalac *.scala
+cd /root/BLB/distributed/
+scalac kryoreg.scala
+
+mkdir /root/BLB/distributed/dependencies 
+
+chmod +x /root/BLB/distributed/make_dependency_jar /root/asp/asp/jit/make_source_jar /root/BLB/run_dist_tests.sh
 
 
 

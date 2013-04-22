@@ -5,6 +5,11 @@ from Queue import PriorityQueue
 from asp.avro_inter.py_avro_inter import *
 
 class SVMEmailVerifierBLB(BLB):
+
+    TYPE_DECS = (['compute_estimate', ['BootstrapData'], 'double'],
+         ['reduce_bootstraps', [('list', 'double')], 'double'],
+         ['average', [('array', 'double')], 'double'])
+
     def compute_estimate(btstrap_data):
         feature_vecs = btstrap_data.data
         models = btstrap_data.models
@@ -19,7 +24,7 @@ class SVMEmailVerifierBLB(BLB):
             max_match = -1.0
             for i in range(num_models):
                 model = models[i]  
-                total = custom_dot(model, feature_vec)
+                total = helperFuncs.custom_dot(model, feature_vec)
                 if total > max_match:
                     choice = i + 1
                     max_match = total    
@@ -55,12 +60,19 @@ class SVMEmailVerifierBLB(BLB):
 
 class SVMMultimediaVerifierBLB(BLB):
     #calculates number of missed detections for all classes 
+
+    TYPE_DECS = (['compute_estimate', ['BootstrapData'], ('array', 'double')],
+         ['reduce_bootstraps', [('array', ('array', 'double'))], ('array','double')],
+         ['average', [('array', ('array','double'))], ('array', 'double')],
+         ['run', [('array', ('array','double'))], ('list','double')])
+
+
     def compute_estimate(btstrap_data):
         models = btstrap_data.models
         num_models = len(models)
         class_occurrences = [0] * num_models
         missed_detections= [0] * num_models
-        class_thresholds = [0] * num_models
+        class_thresholds = [0.0] * num_models
         class_scores = [0.0] * num_models
         for feature_vec in btstrap_data.data:
             tag = feature_vec.tag
@@ -77,10 +89,9 @@ class SVMMultimediaVerifierBLB(BLB):
                         class_thresholds[i] = sub_model[0]
                         first = False
                     else:
-                        class_scores[i] += custom_dot_uncompressed(sub_model, feature_vec)
-                if (class_scores[i] < thresholds[i] and tag == i):
+                        class_scores[i] += HelperFuncs.custom_dot_uncompressed(sub_model, feature_vec)
+                if (class_scores[i] < class_thresholds[i] and tag == i):
                     missed_detections[tag] += weight
-
         return [md_count_occurrences_tup[0] *1.0 / md_count_occurrences_tup[1] for md_count_occurrences_tup in zip(missed_detections, class_occurrences)]
 
     #should change this to take standard deviation 
@@ -92,13 +103,19 @@ class SVMMultimediaVerifierBLB(BLB):
         return [md_percent_sum *1.0 / len(bootstraps) for md_percent_sum in md_percent_sums]
         
     def average(subsamples):
-        md_percent_sums = [0.0] * len(bootstraps[0])
-        for bootstrap in bootstraps:
-            for i in range(len(bootstrap)):
-                md_percent_sums[i] += bootstrap[i]
-        return [md_percent_sum *1.0 / len(bootstraps) for md_percent_sum in md_percent_sums]
+        md_percent_sums = [0.0] * len(subsamples[0])
+        for subsample in subsamples:
+            for i in range(len(subsample)):
+                md_percent_sums[i] += subsample[i]
+        return [md_percent_sum *1.0 / len(subsamples) for md_percent_sum in md_percent_sums]
 
 class NGramRatiosBLB(BLB):
+
+    TYPE_DECS = (['compute_estimate', [('list', 'NGramRow')], ('array', 'double')],
+         ['reduce_bootstraps', [('array', ('array', 'double'))], ('array', 'double')],
+         ['average', [('array', ('array','double'))], ('list','double')])
+
+
     def compute_estimate(btstrap_data):
         BEGINNING_DECADE = 1890
         TOTAL_DECADES = (2010-BEGINNING_DECADE)/10
@@ -181,6 +198,17 @@ class NGramRatiosBLB(BLB):
             std_dev_ratios[i] = scala_lib.std_dev(decade_ratios)
         return std_dev_ratios
 
+    # def reduce_bootstraps(subsamples):
+    #     decade_std_devs = [0.0] * len(subsamples)
+    #     avg_std_dev_ratios = [0.0] * len(subsamples[0])
+    #     for i in range(len(subsamples[0])):
+    #         count = 0
+    #         for cross_decades in subsamples:
+    #             decade_std_devs[count] = cross_decades[i] 
+    #             count += 1 
+    #         avg_std_dev_ratios[i] = scala_lib.mean(decade_std_devs)
+    #     return avg_std_dev_ratios     
+
     def average(subsamples):
         decade_std_devs = [0.0] * len(subsamples)
         avg_std_dev_ratios = [0.0] * len(subsamples[0])
@@ -201,8 +229,8 @@ class SVMVerifierBLBTest(unittest.TestCase):
 
     def test_multimedia_classifier(self): 
         test_blb = SVMMultimediaVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run('/root/test_examples/data/e1-15seq',\
-                              '/root/test_examples/models/e1-15.model.java')
+        result = test_blb.run('/mnt/test_examples/data/20percentE1-15.seq',\
+                              '/mnt/test_examples/models/e1-15double.model.java')
         print 'FINAL RESULT IS:', result  
 
     def test_ngram_ratio_calculator(self):
@@ -213,7 +241,7 @@ class SVMVerifierBLBTest(unittest.TestCase):
 if __name__ == '__main__':
     spark_test_suite = unittest.TestSuite()
     #spark_test_suite.addTest(SVMVerifierBLBTest('test_feature_vec_classifier))
-    #spark_test_suite.addTest(SVMVerifierBLBTest('test_multimedia_classifier'))
-    spark_test_suite.addTest(SVMVerifierBLBTest('test_ngram_ratio_calculator'))
+    spark_test_suite.addTest(SVMVerifierBLBTest('test_multimedia_classifier'))
+    #spark_test_suite.addTest(SVMVerifierBLBTest('test_ngram_ratio_calculator'))
     unittest.TextTestRunner().run(spark_test_suite)
 

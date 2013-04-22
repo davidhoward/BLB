@@ -88,15 +88,12 @@ class BLB:
         scala_reduce = ast_tools.ConvertPyAST_ScalaAST().visit(self.reduce_ast)
         scala_average =  ast_tools.ConvertPyAST_ScalaAST().visit(self.average_ast)
 
-        TYPE_DECS = (['compute_estimate', [('list', 'NGramRow')], ('array', 'double')],
-             ['reduce_bootstraps', [('list', ('array', 'double'))], ('array', 'double')],
-             ['average', [('array', ('array','double'))], ('array','double')])
-
-        scala_gen = SourceGenerator(TYPE_DECS)
+        scala_gen = SourceGenerator(self.TYPE_DECS)
         rendered_scala_input_funcs = scala_gen.to_source(scala_estimate)+'\n' + scala_gen.to_source(scala_reduce) \
                             +'\n'+ scala_gen.to_source(scala_average)
 
         rendered_scala = self.prepend_scala_blb_core_funcs(rendered_scala_input_funcs)
+        #should generate function signature for run here.. using codegen ?
         rendered_scala_object = avro_backend.generate_scala_object("run","",rendered_scala)
         #NOTE: must append outer to function name above to get the classname
         # because of how scala_object created by avro_backend
@@ -104,16 +101,18 @@ class BLB:
 
         #NOTE: must add dependencies in make_dependency_jar so that slave nodes will receive proper files
         time_stamp = str(int(round(time.time() * 1000)))
-        os.system('/root/BLB/distr_support/make_dependency_jar ' + '/root/BLB/distr_support/dependencies/' + time_stamp)
-        os.environ['DEPEND_LOC'] = '/root/BLB/distr_support/dependencies/' + time_stamp +'/depend.jar'
-
-        email_filename = data[0]
-        #model_filename = data[1]
-        #return mod.run_outer(email_filename, model_filename, self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
-        return mod.run_outer(email_filename, self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+        os.system('/root/BLB/distributed/make_dependency_jar ' + '/root/BLB/distributed/dependencies/' + time_stamp)
+        os.environ['DEPEND_LOC'] = '/root/BLB/distributed/dependencies/' + time_stamp +'/depend.jar'
+        # email_filename = data[0]
+        # model_filename = data[1]
+    
+        #probably want to set parallelism (third argument) to num_nodes * num_cores/node * 2 (or 3)
+        #return mod.run_outer(email_filename, model_filename, "16", self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+        return mod.run_outer(data, "16", self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+        #return mod.run_outer(email_filename, "16", self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
 
     def prepend_scala_blb_core_funcs(self, blb_input_funcs):
-        blb_core_funcs = (open('distr_support/blb_core_parallel.scala')).read()
+        blb_core_funcs = (open('distributed/blb_core_parallel.scala')).read()
         return blb_core_funcs + blb_input_funcs
 
     def compile_for( self, key  ):
