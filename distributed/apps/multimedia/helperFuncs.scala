@@ -33,7 +33,8 @@ object HelperFuncs{
         return result_java_list
     }    
 
-    def custom_dot_uncompressed(model:Array[Double], featureVec:FeatureVec): Double = {
+    //both uncompressed
+    def dot(model:Array[Double], featureVec:FeatureVec): Double = {
         var featureVec_weights = featureVec.vec_weights
         var total =0.0
         var featureVec_weight = 0.0

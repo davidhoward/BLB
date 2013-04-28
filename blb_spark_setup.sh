@@ -74,8 +74,8 @@ if [ $APP == "multimedia" ] ; then
 	wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java
 
 	cd /mnt/test_examples/data
-	wget https://s3.amazonaws.com/icsi_blb/20percente1-15.seq
-	#wget https://s3.amazonaws.com/icsi_blb/500e1-15.seq
+	#wget https://s3.amazonaws.com/icsi_blb/20percente1-15.seq
+	wget https://s3.amazonaws.com/icsi_blb/500e1-15.seq
 	#wget https://s3.amazonaws.com/icsi_blb/e1-15seq
 
 elif [ $APP = "email" ]; then

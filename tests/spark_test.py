@@ -15,14 +15,14 @@ class SVMEmailVerifierBLB(BLB):
         models = btstrap_data.models
         errors =0.0
         num_feature_vecs = 0
-        num_models = len(models)
+        num_classes = len(models)
         for feature_vec in feature_vecs:
             weight = feature_vec.weight
             num_feature_vecs += weight
             tag = feature_vec.tag
             choice = 0
             max_match = -1.0
-            for i in range(num_models):
+            for i in range(num_classes):
                 model = models[i]  
                 total = helperFuncs.custom_dot(model, feature_vec)
                 if total > max_match:
@@ -65,82 +65,69 @@ class SVMMultimediaVerifierBLB(BLB):
          ['average', [('array', ('array','double'))], ('array', 'double')],
          ['run', [('array', ('array','double'))], ('list','double')])
 
-    #calculates missed detection percentage for all classes 
     def compute_estimate(btstrap_data):
         models = btstrap_data.models
-        num_models = len(models)
-        class_occurrences = [0] * num_models
-        missed_detections= [0] * num_models
-        class_thresholds = [0.0] * num_models
-        class_scores = [0.0] * num_models
+        num_classes = len(models)
+        file_scores = [[0.0] * len(btstrap_data.data)] * num_classes
+        file_tags = [0] * len(btstrap_data.data)
+        file_index = 0
+        tag = 0
+        #compute score for each file 
         for feature_vec in btstrap_data.data:
             tag = feature_vec.tag
-            if tag > 0:
-                weight = feature_vec.weight
-                class_occurrences[tag-1] += weight
-                choice = 0
-                max_match = -1.0
-                for i in range(num_models):
-                    model = models[i]  
-                    first = True
-                    class_scores[i] = 0.0
-                    for sub_model in model:
-                        if first: 
-                            class_thresholds[i] = sub_model[0]
-                            first = False
-                        else:
-                            class_scores[i] += HelperFuncs.custom_dot_uncompressed(sub_model, feature_vec)
-                    if (class_scores[i] < class_thresholds[i] and tag == i+1):
-                        missed_detections[tag-1] += weight
-        for i in range(len(class_occurrences)):
-            if class_occurrences[i] == 0:
-                class_occurrences[i] = 1
-        return [md_count_occurrences_tup[0] *1.0 / md_count_occurrences_tup[1] for md_count_occurrences_tup in zip(missed_detections, class_occurrences)]
+            file_tags[file_index] = tag 
+            for i in range(num_classes):
+                model = models[i]
+                class_score = 0.0
+                for sub_model in model:
+                    class_score  += HelperFuncs.dot(sub_model, feature_vec)
+                file_scores[i][file_index] = class_score
+            file_index += 1
 
-    # TYPE_DECS = (['compute_estimate', ['BootstrapData'], ('array', ('array', 'double'))],
+        #compute threshold for each class s.t. FA <= 5% for each class
+        TARGET_FA_RATE = .05
+        file_index = 0
+        class_index = 0
+        class_thresholds = [0.0] * num_classes
+        num_negative = 0
+        for class_scores in file_scores:
+            negative_scores = [9999999.0] * len(btstrap_data.data)
+            file_index = 0
+            num_negative = 0
+            for score in class_scores:
+                tag = file_tags[file_index]
+                if tag != class_index+1:
+                    negative_scores[num_negative] = score
+                    num_negative += 1
+                file_index += 1 
+            
+            negative_scores.sort()
 
-    #      ['reduce_bootstraps', [('array', ('array', 'double'))], ('array','double')],
-    #      ['average', [('array', ('array','double'))], ('array', 'double')],
-    #      ['run', [('array', ('array','double'))], ('list','double')])
+            cutoff_index = int((1-TARGET_FA_RATE) * num_negative) + 1
 
-    #calculates missed detection AND false alarm percentage for all classes 
-    # def compute_estimate(btstrap_data):
-    #     models = btstrap_data.models
-    #     num_models = len(models)
-    #     class_occurrences = [0] * num_models
-    #     missed_detections= [0] * num_models
-    #     false_alarms= [0] * num_models
-    #     class_thresholds = [0.0] * num_models
-    #     class_scores = [0.0] * num_models
-    #     total_files = 0.0
-    #     for feature_vec in btstrap_data.data:
-    #         tag = feature_vec.tag
-    #         if tag < 16:
-    #             class_occurrences[tag-1] += weight
-    #         total_files += weight
-    #         weight = feature_vec.weight
-    #         choice = 0
-    #         max_match = -1.0
-    #         for i in range(num_models):
-    #             model = models[i]  
-    #             first = True
-    #             class_scores[i] = 0.0
-    #             for sub_model in model:
-    #                 if first: 
-    #                     class_thresholds[i] = sub_model[0]
-    #                     first = False
-    #                 else:
-    #                     class_scores[i] += HelperFuncs.custom_dot_uncompressed(sub_model, feature_vec)
-    #             if (class_scores[i] < class_thresholds[i] and tag == i+1):
-    #                 missed_detections[tag-1] += weight
-    #             elif (score >= thresholds[predicted_class-1] and tag != i+1):
-    #                 false_alarms[tag-1] += weight
+            class_thresholds[class_index] = negative_scores[cutoff_index]
+            class_index += 1
 
-    #     md_rates = [md_count_occurrences_tup[0] *1.0 / md_count_occurrences_tup[1] for md_count_occurrences_tup in zip(missed_detections, class_occurrences)]
-    #     fa_rates = [fa_count_occurrences_tup[0] *1.0 / (total_files - md_count_occurrences_tup[1]) for fa_count_occurrences_tup in zip(false_alarms, class_occurrences)]
-    # might be better if i do tuples ?
-    #     return zip(md_rates, fa_rates)
+        #compute MD % for each class
+        md_ratios = [0.0] * num_classes
+        class_index = 0
+        for class_scores in file_scores:
+            md_total = 0
+            class_occurrences = 0
+            file_index = 0
 
+            for score in class_scores:
+                tag = file_tags[file_index]
+                file_index +=1
+                if tag == class_index+1:
+                    class_occurrences += 1
+                    if score < class_thresholds[class_index]:
+                        md_total += 1 
+            if class_occurrences != 0:
+                md_ratios[class_index] = md_total *1.0 / class_occurrences
+            class_index += 1
+
+        return md_ratios
 
     #computes mean md_ratio
     # def reduce_bootstraps(bootstraps):
@@ -151,13 +138,23 @@ class SVMMultimediaVerifierBLB(BLB):
     #     return [md_percent_sum *1.0 / len(bootstraps) for md_percent_sum in md_percent_sums]
 
     #computes std dev
-
     def reduce_bootstraps(bootstraps):
         class_md_ratios = [0.0] * len(bootstraps)
         std_dev_md_ratios = [0.0] * len(bootstraps[0])
         for i in range(len(bootstraps[0])):
             count = 0
             for md_ratios in bootstraps:
+                class_md_ratios[count] = md_ratios[i] 
+                count += 1 
+            std_dev_md_ratios[i] = scala_lib.std_dev(class_md_ratios)
+        return std_dev_md_ratios
+
+    def average(subsamples):
+        class_md_ratios = [0.0] * len(subsamples)
+        std_dev_md_ratios = [0.0] * len(subsamples[0])
+        for i in range(len(subsamples[0])):
+            count = 0
+            for md_ratios in subsamples:
                 class_md_ratios[count] = md_ratios[i] 
                 count += 1 
             std_dev_md_ratios[i] = scala_lib.std_dev(class_md_ratios)
@@ -175,7 +172,6 @@ class NGramRatiosBLB(BLB):
     TYPE_DECS = (['compute_estimate', [('list', 'NGramRow')], ('array', 'double')],
          ['reduce_bootstraps', [('array', ('array', 'double'))], ('array', 'double')],
          ['average', [('array', ('array','double'))], ('list','double')])
-
 
     def compute_estimate(btstrap_data):
         BEGINNING_DECADE = 1890
@@ -290,7 +286,7 @@ class SVMVerifierBLBTest(unittest.TestCase):
 
     def test_multimedia_classifier(self): 
         test_blb = SVMMultimediaVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run('/mnt/test_examples/data/20percentE1-15.seq',\
+        result = test_blb.run('/mnt/test_examples/data/20percente1-15.seq',\
                               '/mnt/test_examples/models/e1-15double.model.java')
         print 'FINAL RESULT IS:', result  
 
