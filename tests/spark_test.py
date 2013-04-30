@@ -1,8 +1,9 @@
 import unittest
 
 from blb import BLB
-from Queue import PriorityQueue
 from asp.avro_inter.py_avro_inter import *
+from Queue import PriorityQueue
+import os
 
 class SVMEmailVerifierBLB(BLB):
 
@@ -72,6 +73,7 @@ class SVMMultimediaVerifierBLB(BLB):
         file_tags = [0] * len(btstrap_data.data)
         file_index = 0
         tag = 0
+
         #compute score for each file 
         for feature_vec in btstrap_data.data:
             tag = feature_vec.tag
@@ -130,12 +132,24 @@ class SVMMultimediaVerifierBLB(BLB):
         return md_ratios
 
     #computes mean md_ratio
+    def reduce_bootstraps(bootstraps):
+        md_percent_sums = [0.0] * len(bootstraps[0])
+        for bootstrap in bootstraps:
+            for i in range(len(bootstrap)):
+                md_percent_sums[i] += bootstrap[i]
+        return [md_percent_sum *1.0 / len(bootstraps) for md_percent_sum in md_percent_sums]
+
+
     # def reduce_bootstraps(bootstraps):
-    #     md_percent_sums = [0.0] * len(bootstraps[0])
-    #     for bootstrap in bootstraps:
-    #         for i in range(len(bootstrap)):
-    #             md_percent_sums[i] += bootstrap[i]
-    #     return [md_percent_sum *1.0 / len(bootstraps) for md_percent_sum in md_percent_sums]
+    #     decade_std_devs = [0.0] * len(bootstraps)
+    #     avg_std_dev_ratios = [0.0] * len(bootstraps[0])
+    #     for i in range(len(bootstraps[0])):
+    #         count = 0
+    #         for cross_decades in bootstraps:
+    #             decade_std_devs[count] = cross_decades[i] 
+    #             count += 1 
+    #         avg_std_dev_ratios[i] = scala_lib.mean(decade_std_devs)
+    #     return avg_std_dev_ratios    
 
     #computes std dev
     def reduce_bootstraps(bootstraps):
@@ -150,33 +164,25 @@ class SVMMultimediaVerifierBLB(BLB):
         return std_dev_md_ratios
 
     def average(subsamples):
-        class_md_ratios = [0.0] * len(subsamples)
-        std_dev_md_ratios = [0.0] * len(subsamples[0])
+        class_std_dev_md_ratios = [0.0] * len(subsamples)
+        avg_std_dev_md_ratios = [0.0] * len(subsamples[0])
         for i in range(len(subsamples[0])):
             count = 0
             for md_ratios in subsamples:
-                class_md_ratios[count] = md_ratios[i] 
+                class_std_dev_md_ratios[count] = md_ratios[i] 
                 count += 1 
-            std_dev_md_ratios[i] = scala_lib.std_dev(class_md_ratios)
-        return std_dev_md_ratios
-
-    def average(subsamples):
-        md_percent_sums = [0.0] * len(subsamples[0])
-        for subsample in subsamples:
-            for i in range(len(subsample)):
-                md_percent_sums[i] += subsample[i]
-        return [md_percent_sum *1.0 / len(subsamples) for md_percent_sum in md_percent_sums]
+            avg_std_dev_md_ratios[i] = scala_lib.mean(class_std_dev_md_ratios)
+        return avg_std_dev_md_ratios
 
 class NGramRatiosBLB(BLB):
-
-    TYPE_DECS = (['compute_estimate', [('list', 'NGramRow')], ('array', 'double')],
+    TYPE_DECS = (['compute_estimate', [('array', 'NGramRow')], ('array', 'double')],
          ['reduce_bootstraps', [('array', ('array', 'double'))], ('array', 'double')],
-         ['average', [('array', ('array','double'))], ('list','double')])
+         ['average', [('array', ('array','double'))], ('array','double')])
 
     def compute_estimate(btstrap_data):
         BEGINNING_DECADE = 1890
         TOTAL_DECADES = (2010-BEGINNING_DECADE)/10
-        NUM_TOP_RATIOS = 50
+        NUM_TOP_RATIOS = 10000
         MIN_FREQUENCY_THRESH = 0.000001
 
         #obtain total number of occurrences per decade 
@@ -244,27 +250,27 @@ class NGramRatiosBLB(BLB):
             count += 1
         return decade_ratios_arr
 
-    def reduce_bootstraps(bootstraps):
-        decade_ratios = [0.0] * len(bootstraps)
-        std_dev_ratios = [0.0] * len(bootstraps[0])
-        for i in range(len(bootstraps[0])):
-            count = 0
-            for cross_decades in bootstraps:
-                decade_ratios[count] = cross_decades[i] 
-                count += 1 
-            std_dev_ratios[i] = scala_lib.std_dev(decade_ratios)
-        return std_dev_ratios
-
-    # def reduce_bootstraps(subsamples):
-    #     decade_std_devs = [0.0] * len(subsamples)
-    #     avg_std_dev_ratios = [0.0] * len(subsamples[0])
-    #     for i in range(len(subsamples[0])):
+    # def reduce_bootstraps(bootstraps):
+    #     decade_ratios = [0.0] * len(bootstraps)
+    #     std_dev_ratios = [0.0] * len(bootstraps[0])
+    #     for i in range(len(bootstraps[0])):
     #         count = 0
-    #         for cross_decades in subsamples:
-    #             decade_std_devs[count] = cross_decades[i] 
+    #         for cross_decades in bootstraps:
+    #             decade_ratios[count] = cross_decades[i] 
     #             count += 1 
-    #         avg_std_dev_ratios[i] = scala_lib.mean(decade_std_devs)
-    #     return avg_std_dev_ratios     
+    #         std_dev_ratios[i] = scala_lib.std_dev(decade_ratios)
+    #     return std_dev_ratios
+
+    def reduce_bootstraps(subsamples):
+        decade_std_devs = [0.0] * len(subsamples)
+        avg_std_dev_ratios = [0.0] * len(subsamples[0])
+        for i in range(len(subsamples[0])):
+            count = 0
+            for cross_decades in subsamples:
+                decade_std_devs[count] = cross_decades[i] 
+                count += 1 
+            avg_std_dev_ratios[i] = scala_lib.mean(decade_std_devs)
+        return avg_std_dev_ratios     
 
     def average(subsamples):
         decade_std_devs = [0.0] * len(subsamples)
@@ -280,19 +286,19 @@ class NGramRatiosBLB(BLB):
 class SVMVerifierBLBTest(unittest.TestCase):
     def test_feature_vec_classifier(self): 
         test_blb = SVMEmailVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run('/root/test_examples/data/seq_test',\
-                              '/root/test_examples/models/train_model.avro')
+        result = test_blb.run(os.environ['HDFS_URL'] +'/test_examples/data/seq_test',\
+                              '/mnt/test_examples/models/train_model.avro')
         print 'FINAL RESULT IS:', result  
 
     def test_multimedia_classifier(self): 
         test_blb = SVMMultimediaVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run('/mnt/test_examples/data/20percente1-15.seq',\
+        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/20percente1-15.dat',\
                               '/mnt/test_examples/models/e1-15double.model.java')
         print 'FINAL RESULT IS:', result  
 
     def test_ngram_ratio_calculator(self):
         test_blb = NGramRatiosBLB(25, 50, .7, with_scala=True)
-        result = test_blb.run('/mnt/test_examples/data/10_percent_cleaned_blb.seq')
+        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/10_percent_cleaned_blb.seq')
         print 'FINAL RESULT IS:', result  
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 
 #APP=email
 APP=multimedia
-#APP=ngrams
+# APP=ngrams
 echo "export APP=$APP" >> /root/.bash_profile
 
 #get general asp framework and blb specializer
@@ -62,6 +62,9 @@ echo "export PATH=$PATH:/root/scala-2.9.2/bin" >> /root/.bash_profile
 #point CLASSPATH to spark, avro,etc
 echo "export CLASSPATH=$CLASSPATH:/root/:.:/root/avro:/root/BLB/distributed:/root/BLB/distributed/apps/$APP/:/root/spark/core/target/*" >> /root/.bash_profile
 
+echo "export NUM_SLAVE_NODES=$(~/ephemeral-hdfs/bin/hadoop dfsadmin -report | grep "Name:" | wc -l)" >> /root/.bash_profile
+echo "export NUM_CORES_PER_NODE=$(nproc)" >> /root/.bash_profile
+
 #store MASTER node address
 echo "export MASTER=spark://$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):7077" >> /root/.bash_profile
 source /root/.bash_profile
@@ -71,12 +74,15 @@ mkdir /mnt/test_examples/data
 
 if [ $APP == "multimedia" ] ; then
 	cd /mnt/test_examples/models
-	wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java
+	wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java.gz
+	gunzip *.gz 
 
 	cd /mnt/test_examples/data
-	#wget https://s3.amazonaws.com/icsi_blb/20percente1-15.seq
-	wget https://s3.amazonaws.com/icsi_blb/500e1-15.seq
-	#wget https://s3.amazonaws.com/icsi_blb/e1-15seq
+	# wget https://s3.amazonaws.com/icsi_blb/500e1-15.dat.gz
+	 wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
+	wget https://s3.amazonaws.com/icsi_blb/40percentE1-15.dat.gz
+	# wget https://s3.amazonaws.com/icsi_blb/e1-15.dat.gz
+	gunzip *.gz
 
 elif [ $APP = "email" ]; then
 	cd /mnt/test_examples/models
@@ -94,6 +100,7 @@ elif [ $APP = "ngrams" ]; then
 	wget https://s3.amazonaws.com/ngrams_blb/10_percent_cleaned_blb.seq
 fi
 
+/root/ephemeral-hdfs/bin/hadoop dfs -put /mnt/test_examples /
 /root/spark-ec2/copy-dir /mnt/test_examples/
 
 #compile some java/scala files and send to slave nodes

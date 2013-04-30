@@ -103,13 +103,12 @@ class BLB:
         time_stamp = str(int(round(time.time() * 1000)))
         os.system('/root/BLB/distributed/make_dependency_jar ' + '/root/BLB/distributed/dependencies/' + time_stamp)
         os.environ['DEPEND_LOC'] = '/root/BLB/distributed/dependencies/' + time_stamp +'/depend.jar'
-        # email_filename = data[0]
-        # model_filename = data[1]
-    
-        #probably want to set parallelism (third argument) to num_nodes * num_cores/node * 2 (or 3)
-        #return mod.run_outer(email_filename, model_filename, "16", self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
-        return mod.run_outer(data, "16", self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
-        #return mod.run_outer(email_filename, "16", self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+
+        return mod.run_outer(data, self.get_num_spark_tasks(), self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+
+    def get_num_spark_tasks(self):
+        TASKS_PER_CORE = 2
+        return str(int(os.environ['NUM_SLAVE_NODES']) * int(os.environ['NUM_CORES_PER_NODE']) * TASKS_PER_CORE)
 
     def prepend_scala_blb_core_funcs(self, blb_input_funcs):
         blb_core_funcs = (open('distributed/blb_core_parallel.scala')).read()

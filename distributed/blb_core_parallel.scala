@@ -25,7 +25,8 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
     val bnumSubsamples = sc.broadcast(numSubsamples)
 
     var dataFilename = filenames.apply(0)
-    val distData = sc.sequenceFile[Int, String](dataFilename.toString())
+    // val distData = sc.sequenceFile[Int, String](dataFilename.toString())
+    val distData = sc.textFile(dataFilename.toString())
 
     //put in try catch block ?
     var modelFilename = filenames.apply(1)
@@ -40,13 +41,13 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
         val gen = new java.util.Random()
         var subsampCount = 1
         var prob =0.0
-        var outputs = List((0, HelperFuncs.formatInputItem(item._2))).drop(1)
+        var outputs = List((0, HelperFuncs.formatInputItem(item))).drop(1)
         //choose subsamples and replicate them
         for (i <- Range(0, bnumSubsamples.value)){
                 prob = gen.nextDouble()
                 if (prob < rand_prob.value){
                         for (i <- Range((subsampCount-1) * bnumBootstraps.value , subsampCount*bnumBootstraps.value)){
-                            outputs ::= (i, HelperFuncs.formatInputItem(item._2))
+                            outputs ::= (i, HelperFuncs.formatInputItem(item))
                         }
                 }
                 subsampCount += 1
