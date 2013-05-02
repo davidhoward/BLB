@@ -1,7 +1,7 @@
 #!/bin/bash
 
-APP=email
-#APP=multimedia
+#APP=email
+APP=multimedia
 # APP=ngrams
 echo "export APP=$APP" >> /root/.bash_profile
 
@@ -80,7 +80,7 @@ if [ $APP == "multimedia" ] ; then
 	cd /mnt/test_examples/data
 	#wget https://s3.amazonaws.com/icsi_blb/500e1-15.dat.gz
 	#wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
-	wget https://s3.amazonaws.com/icsi_blb/40percentE1-15.dat.gz
+	wget https://s3.amazonaws.com/icsi_blb/40percente1-15.dat.gz
 	#wget https://s3.amazonaws.com/icsi_blb/e1-15.dat.gz
 	gunzip *.gz
 
@@ -99,6 +99,7 @@ elif [ $APP = "ngrams" ]; then
 	wget https://s3.amazonaws.com/ngrams_blb/10_percent_cleaned_blb.seq
 fi
 
+/root/ephemeral-hdfs/bin/hadoop dfs -rmr /test_examples
 /root/ephemeral-hdfs/bin/hadoop dfs -put /mnt/test_examples /
 /root/spark-ec2/copy-dir /mnt/test_examples/
 

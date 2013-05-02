@@ -279,8 +279,8 @@ class SVMVerifierBLBTest(unittest.TestCase):
         print 'FINAL RESULT IS:', result  
 
     def test_multimedia_classifier(self): 
-        test_blb = SVMMultimediaVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/20percente1-15.dat',\
+        test_blb = SVMMultimediaVerifierBLB(25, 30, .7, with_scala=True)    
+        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/40percente1-15.dat',\
                               '/mnt/test_examples/models/e1-15double.model.java')
         print 'FINAL RESULT IS:', result  
 
