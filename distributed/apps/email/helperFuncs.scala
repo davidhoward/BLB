@@ -1,4 +1,7 @@
-import java.util.ArrayList
+import scala.collection.mutable.ListBuffer
+import java.io.FileInputStream
+import scala.collection.JavaConversions._
+import java.io.ObjectInputStream
 
 object HelperFuncs {
     def formatInputItem(input: String): CompressedFeatureVec={
@@ -37,12 +40,17 @@ object HelperFuncs {
         var featureVecWeight = 0.0
         var modelWeight = 0.0
         var i = 0
-        while (i < featureVecIndices.length){
-            featureVecIndex = featureVecIndices(i)
-            featureVecWeight = featureVecWeights(i)
-            modelWeight = model(featureVecIndex)
-            total += featureVecWeight * modelWeight
-            i += 1
+        try {
+            while (i < featureVecIndices.length){
+                featureVecIndex = featureVecIndices(i)
+                featureVecWeight = featureVecWeights(i)
+                modelWeight = model(featureVecIndex)
+                total += featureVecWeight * modelWeight
+                i += 1
+            }
+        } catch {
+            case e: java.lang.ArrayIndexOutOfBoundsException =>
+                println("Too large of feature value")
         }
         return total
     }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#APP=email
-APP=multimedia
+APP=email
+#APP=multimedia
 # APP=ngrams
 echo "export APP=$APP" >> /root/.bash_profile
 
@@ -92,7 +92,7 @@ elif [ $APP = "email" ]; then
 	#wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
 	#wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
 	#wget https://s3.amazonaws.com/entire_corpus/seq_test
-	wget https://s3.amazonaws.com/entire_corpus/1.2milemailstest.dat
+	wget https://s3.amazonaws.com/1.2milemails/1.2milemailstest.dat
 
 elif [ $APP = "ngrams" ]; then
 	cd /mnt/test_examples/data

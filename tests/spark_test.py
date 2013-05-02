@@ -8,7 +8,7 @@ import os
 class SVMEmailVerifierBLB(BLB):
 
     TYPE_DECS = (['compute_estimate', ['BootstrapData'], 'double'],
-         ['reduce_bootstraps', [('list', 'double')], 'double'],
+         ['reduce_bootstraps', [('array', 'double')], 'double'],
          ['average', [('array', 'double')], 'double'])
 
     def compute_estimate(btstrap_data):
@@ -34,13 +34,12 @@ class SVMEmailVerifierBLB(BLB):
         return errors / num_feature_vecs
     
     #calculates average error estimate
-    def reduce_bootstraps(bootstraps):
-        mean = 0.0
-        for bootstrap in bootstraps:
-            mean += bootstrap
-        return mean / len(bootstraps)
+    # def reduce_bootstraps(bootstraps):
+    #     mean = 0.0
+    #     for bootstrap in bootstraps:
+    #         mean += bootstrap
+    #     return mean / len(bootstraps)
     
-    """
     #calculates stddev on error estimates
     def reduce_bootstraps(bootstraps):
         mean = 0.0
@@ -51,7 +50,6 @@ class SVMEmailVerifierBLB(BLB):
         for bootstrap in bootstraps:           
             squared_dif += (mean-bootstrap) * (mean-bootstrap)
         return (squared_dif  / (len(bootstraps)-1)) ** .5
-    """
         
     def average(subsamples):
         mean = 0.0
@@ -276,8 +274,8 @@ class NGramRatiosBLB(BLB):
 class SVMVerifierBLBTest(unittest.TestCase):
     def test_feature_vec_classifier(self): 
         test_blb = SVMEmailVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run(os.environ['HDFS_URL'] +'/test_examples/data/seq_test',\
-                              '/mnt/test_examples/models/train_model.avro')
+        result = test_blb.run(os.environ['HDFS_URL'] +'/test_examples/data/1.2milemailstest.dat',\
+                              '/mnt/test_examples/models/emails.model.java')
         print 'FINAL RESULT IS:', result  
 
     def test_multimedia_classifier(self): 
@@ -293,7 +291,7 @@ class SVMVerifierBLBTest(unittest.TestCase):
 
 if __name__ == '__main__':
     spark_test_suite = unittest.TestSuite()
-    #spark_test_suite.addTest(SVMVerifierBLBTest('test_feature_vec_classifier))
+    #spark_test_suite.addTest(SVMVerifierBLBTest('test_feature_vec_classifier'))
     spark_test_suite.addTest(SVMVerifierBLBTest('test_multimedia_classifier'))
     #spark_test_suite.addTest(SVMVerifierBLBTest('test_ngram_ratio_calculator'))
     unittest.TextTestRunner().run(spark_test_suite)
