@@ -25,7 +25,6 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
     val bnumSubsamples = sc.broadcast(numSubsamples)
 
     var dataFilename = filenames.apply(0)
-    // val distData = sc.sequenceFile[Int, String](dataFilename.toString())
     val distData = sc.textFile(dataFilename.toString())
 
     //put in try catch block ?
@@ -52,10 +51,8 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
                 }
                 subsampCount += 1
         }
-
         outputs
     }).groupByKey().map(subsamp => {
-        //val funcs = new run_outer_data()
         var btstrapVec = subsamp._2.toIndexedSeq
 
         val gen = new java.util.Random()

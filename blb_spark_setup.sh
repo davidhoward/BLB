@@ -78,22 +78,21 @@ if [ $APP == "multimedia" ] ; then
 	gunzip *.gz 
 
 	cd /mnt/test_examples/data
-	# wget https://s3.amazonaws.com/icsi_blb/500e1-15.dat.gz
-	 wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
+	#wget https://s3.amazonaws.com/icsi_blb/500e1-15.dat.gz
+	#wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
 	wget https://s3.amazonaws.com/icsi_blb/40percentE1-15.dat.gz
-	# wget https://s3.amazonaws.com/icsi_blb/e1-15.dat.gz
+	#wget https://s3.amazonaws.com/icsi_blb/e1-15.dat.gz
 	gunzip *.gz
 
 elif [ $APP = "email" ]; then
 	cd /mnt/test_examples/models
-	#wget https://s3.amazonaws.com/halfmilEmail/comp113kmodel.avro
-	#wget https://s3.amazonaws.com/halfmilEmail/comp250kmodel.avro
-	wget https://s3.amazonaws.com/1.2milemails/model.avro
+	wget https://s3.amazonaws.com/1.2milemails/emails.model.java
 
 	cd /mnt/test_examples/data
 	#wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
 	#wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
-	wget https://s3.amazonaws.com/entire_corpus/seq_test
+	#wget https://s3.amazonaws.com/entire_corpus/seq_test
+	wget https://s3.amazonaws.com/entire_corpus/1.2milemailstest.dat
 
 elif [ $APP = "ngrams" ]; then
 	cd /mnt/test_examples/data

@@ -25,7 +25,7 @@ class SVMEmailVerifierBLB(BLB):
             max_match = -1.0
             for i in range(num_classes):
                 model = models[i]  
-                total = helperFuncs.custom_dot(model, feature_vec)
+                total = HelperFuncs.dot(model, feature_vec)
                 if total > max_match:
                     choice = i + 1
                     max_match = total    
@@ -79,11 +79,12 @@ class SVMMultimediaVerifierBLB(BLB):
             tag = feature_vec.tag
             file_tags[file_index] = tag 
             for i in range(num_classes):
-                model = models[i]
-                class_score = 0.0
-                for sub_model in model:
-                    class_score  += HelperFuncs.dot(sub_model, feature_vec)
-                file_scores[i][file_index] = class_score
+                if feature_vec.weight > 0:
+                    model = models[i]
+                    class_score = 0.0
+                    for sub_model in model:
+                        class_score  += HelperFuncs.dot(sub_model, feature_vec)
+                    file_scores[i][file_index] = class_score
             file_index += 1
 
         #compute threshold for each class s.t. FA <= 5% for each class
@@ -93,21 +94,30 @@ class SVMMultimediaVerifierBLB(BLB):
         class_thresholds = [0.0] * num_classes
         num_negative = 0
         for class_scores in file_scores:
-            negative_scores = [9999999.0] * len(btstrap_data.data)
+            negative_scores = [[0.0, 0.0]] * len(btstrap_data.data)
             file_index = 0
-            num_negative = 0
+            negative_index = 0
+            total_negative = 0.0
             for score in class_scores:
                 tag = file_tags[file_index]
                 if tag != class_index+1:
-                    negative_scores[num_negative] = score
-                    num_negative += 1
+                    weight = float(btstrap_data.data[file_index].weight)
+                    negative_scores[negative_index] = [score, weight]
+                    negative_index += 1
+                    total_negative += weight
                 file_index += 1 
             
+            negative_scores = negative_scores[0:negative_index]
             negative_scores.sort()
+            summed = 0.0
+            negative_index = 0
+            neg_score_pair = [0.0, 0.0]
+            while (summed/ total_negative < (1.0 -TARGET_FA_RATE)):
+                neg_score_pair = negative_scores[negative_index]
+                summed += neg_score_pair[1]
+                negative_index +=1
+            class_thresholds[class_index] = neg_score_pair[0]
 
-            cutoff_index = int((1-TARGET_FA_RATE) * num_negative) + 1
-
-            class_thresholds[class_index] = negative_scores[cutoff_index]
             class_index += 1
 
         #compute MD % for each class
@@ -120,36 +130,16 @@ class SVMMultimediaVerifierBLB(BLB):
 
             for score in class_scores:
                 tag = file_tags[file_index]
-                file_index +=1
                 if tag == class_index+1:
-                    class_occurrences += 1
+                    class_occurrences += btstrap_data.data[file_index].weight
                     if score < class_thresholds[class_index]:
-                        md_total += 1 
+                        md_total += btstrap_data.data[file_index].weight
+                file_index +=1
             if class_occurrences != 0:
                 md_ratios[class_index] = md_total *1.0 / class_occurrences
             class_index += 1
 
         return md_ratios
-
-    #computes mean md_ratio
-    def reduce_bootstraps(bootstraps):
-        md_percent_sums = [0.0] * len(bootstraps[0])
-        for bootstrap in bootstraps:
-            for i in range(len(bootstrap)):
-                md_percent_sums[i] += bootstrap[i]
-        return [md_percent_sum *1.0 / len(bootstraps) for md_percent_sum in md_percent_sums]
-
-
-    # def reduce_bootstraps(bootstraps):
-    #     decade_std_devs = [0.0] * len(bootstraps)
-    #     avg_std_dev_ratios = [0.0] * len(bootstraps[0])
-    #     for i in range(len(bootstraps[0])):
-    #         count = 0
-    #         for cross_decades in bootstraps:
-    #             decade_std_devs[count] = cross_decades[i] 
-    #             count += 1 
-    #         avg_std_dev_ratios[i] = scala_lib.mean(decade_std_devs)
-    #     return avg_std_dev_ratios    
 
     #computes std dev
     def reduce_bootstraps(bootstraps):

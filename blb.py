@@ -104,7 +104,9 @@ class BLB:
         os.system('/root/BLB/distributed/make_dependency_jar ' + '/root/BLB/distributed/dependencies/' + time_stamp)
         os.environ['DEPEND_LOC'] = '/root/BLB/distributed/dependencies/' + time_stamp +'/depend.jar'
 
-        return mod.run_outer(data, self.get_num_spark_tasks(), self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
+        num_spark_tasks = self.get_num_spark_tasks()
+        print 'Running Spark with', num_spark_tasks, 'tasks'
+        return mod.run_outer(data, num_spark_tasks, self.dim, self.num_subsamples, self.num_bootstraps, self.subsample_len_exp)
 
     def get_num_spark_tasks(self):
         TASKS_PER_CORE = 2

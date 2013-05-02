@@ -8,7 +8,7 @@ object HelperFuncs{
     def formatInputItem(input: String): FeatureVec={
             var vector = input.split(" ")
             var featureVec = new FeatureVec()
-            featureVec.vec_weights = new Array[Double](vector.length-1)
+            featureVec.vecWeights = new Array[Double](vector.length-1)
 
             var first = true
             var num = 0
@@ -21,7 +21,7 @@ object HelperFuncs{
                     }
                     else {
                             weight = java.lang.Double.parseDouble((elem.substring(elem.indexOf(':')+1, elem.length)))
-                            featureVec.vec_weights(count) = weight
+                            featureVec.vecWeights(count) = weight
                             count += 1
                     }
             }
@@ -35,14 +35,13 @@ object HelperFuncs{
 
     //both uncompressed
     def dot(model:Array[Double], featureVec:FeatureVec): Double = {
-        var featureVec_weights = featureVec.vec_weights
+        var featureVec_weights = featureVec.vecWeights
         var total =0.0
         var featureVec_weight = 0.0
         var model_weight = model(0)
         var i = 0
         while (i < featureVec_weights.length){
-            featureVec_weight = featureVec_weights(i)
-            total += featureVec_weight * model(i+1)
+            total += featureVec_weights(i)* model(i+1)
             i += 1
         }
         return total*model_weight
