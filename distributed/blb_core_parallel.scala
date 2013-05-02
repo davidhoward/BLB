@@ -9,7 +9,7 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 
 
-def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM: Int, numSubsamples:Int, numBootstraps:Int, subsampleLenExp:Double):java.util.List[Double]={
+def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM: Int, numSubsamples:Int, numBootstraps:Int, subsampleLenExp:Double):Double={
 
     System.setProperty("spark.default.parallelism", NUM_TASKS)
     System.setProperty("spark.serializer", "spark.KryoSerializer")
