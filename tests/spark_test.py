@@ -7,13 +7,11 @@ import os
 
 class SVMEmailVerifierBLB(BLB):
 
-    TYPE_DECS = (['compute_estimate', ['BootstrapData'], 'double'],
+    TYPE_DECS = (['compute_estimate', [('array', 'CompressedFeatureVec'), ('array', ('array', 'double'))], 'double'],
          ['reduce_bootstraps', [('array', 'double')], 'double'],
          ['average', [('array', 'double')], 'double'])
 
-    def compute_estimate(btstrap_data):
-        feature_vecs = btstrap_data.data
-        models = btstrap_data.models
+    def compute_estimate(feature_vecs, models):
         errors =0.0
         num_feature_vecs = 0
         num_classes = len(models)
@@ -34,11 +32,11 @@ class SVMEmailVerifierBLB(BLB):
         return errors / num_feature_vecs
     
     #calculates average error estimate
-    # def reduce_bootstraps(bootstraps):
-    #     mean = 0.0
-    #     for bootstrap in bootstraps:
-    #         mean += bootstrap
-    #     return mean / len(bootstraps)
+    def reduce_bootstraps(bootstraps):
+        mean = 0.0
+        for bootstrap in bootstraps:
+            mean += bootstrap
+        return mean / len(bootstraps)
     
     #calculates stddev on error estimates
     def reduce_bootstraps(bootstraps):
@@ -59,21 +57,20 @@ class SVMEmailVerifierBLB(BLB):
 
 class SVMMultimediaVerifierBLB(BLB):
 
-    TYPE_DECS = (['compute_estimate', ['BootstrapData'], ('array', 'double')],
+    TYPE_DECS = (['compute_estimate', [('array', 'FeatureVec'), ('array', ('array', ('array','double')))], ('array', 'double')],
          ['reduce_bootstraps', [('array', ('array', 'double'))], ('array','double')],
          ['average', [('array', ('array','double'))], ('array', 'double')],
          ['run', [('array', ('array','double'))], ('list','double')])
 
-    def compute_estimate(btstrap_data):
-        models = btstrap_data.models
+    def compute_estimate(feature_vecs, model):
         num_classes = len(models)
-        file_scores = [[0.0] * len(btstrap_data.data)] * num_classes
-        file_tags = [0] * len(btstrap_data.data)
+        file_scores = [[0.0] * len(feature_vecs)] * num_classes
+        file_tags = [0] * len(feature_vecs)
         file_index = 0
         tag = 0
 
         #compute score for each file 
-        for feature_vec in btstrap_data.data:
+        for feature_vec in feature_vecs:
             tag = feature_vec.tag
             file_tags[file_index] = tag 
             for i in range(num_classes):
@@ -92,14 +89,14 @@ class SVMMultimediaVerifierBLB(BLB):
         class_thresholds = [0.0] * num_classes
         num_negative = 0
         for class_scores in file_scores:
-            negative_scores = [[0.0, 0.0]] * len(btstrap_data.data)
+            negative_scores = [[0.0, 0.0]] * len(feature_vecs)
             file_index = 0
             negative_index = 0
             total_negative = 0.0
             for score in class_scores:
                 tag = file_tags[file_index]
                 if tag != class_index+1:
-                    weight = float(btstrap_data.data[file_index].weight)
+                    weight = float(feature_vecs[file_index].weight)
                     negative_scores[negative_index] = [score, weight]
                     negative_index += 1
                     total_negative += weight
@@ -129,9 +126,9 @@ class SVMMultimediaVerifierBLB(BLB):
             for score in class_scores:
                 tag = file_tags[file_index]
                 if tag == class_index+1:
-                    class_occurrences += btstrap_data.data[file_index].weight
+                    class_occurrences += feature_vecs[file_index].weight
                     if score < class_thresholds[class_index]:
-                        md_total += btstrap_data.data[file_index].weight
+                        md_total += feature_vecs[file_index].weight
                 file_index +=1
             if class_occurrences != 0:
                 md_ratios[class_index] = md_total *1.0 / class_occurrences
