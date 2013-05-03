@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#APP=email
-APP=multimedia
-# APP=ngrams
+
+#export APP=email
+export APP=multimedia
+#export APP=ngrams
 echo "export APP=$APP" >> /root/.bash_profile
 
 #get general asp framework and blb specializer
@@ -11,6 +12,8 @@ cd ~
 git clone git://github.com/pbirsinger/aspNew.git
 mv aspNew/ asp/
 git clone git://github.com/davidhoward/BLB.git
+git checkout $APP
+
 
 #compile spark
 cd /root/spark
@@ -19,6 +22,8 @@ cd /root/spark
 # sbt/sbt package 
 sbt/sbt assembly
 
+echo 'SPARK_JAVA_OPTS+=" -Dspark.storage.blockManagerHeartBeatMs=120000"' >> /root/spark/conf/spark-env.sh
+echo 'export SPARK_JAVA_OPTS' >> /root/spark/conf/spark-env.sh
 ~/spark-ec2/copy-dir /root/spark
 
 #install codepy and numpy
@@ -92,16 +97,22 @@ elif [ $APP = "email" ]; then
 	#wget https://s3.amazonaws.com/halfmilEmail/seq113ktest
 	#wget https://s3.amazonaws.com/halfmilEmail/seq250ktest
 	#wget https://s3.amazonaws.com/entire_corpus/seq_test
-	wget https://s3.amazonaws.com/1.2milemails/1.2milemailstest.dat
+	wget https://s3.amazonaws.com/1.2milemails/1.2milemailstest.dat.gz
+	gunzip *.gz
+
+	REPL_FACTOR=50
+	for (( k=0; k<=$REPL_FACTOR; k++));do
+		cat 1.2milemailstest.dat >> $REPL_FACTORemails.dat
+	done 
 
 elif [ $APP = "ngrams" ]; then
 	cd /mnt/test_examples/data
 	wget https://s3.amazonaws.com/ngrams_blb/10_percent_cleaned_blb.seq
 fi
 
-/root/ephemeral-hdfs/bin/hadoop dfs -rmr /test_examples
+#/root/ephemeral-hdfs/bin/hadoop dfs -rmr /test_examples
 /root/ephemeral-hdfs/bin/hadoop dfs -put /mnt/test_examples /
-/root/spark-ec2/copy-dir /mnt/test_examples/
+#/root/spark-ec2/copy-dir /mnt/test_examples/
 
 #compile some java/scala files and send to slave nodes
 cd /root/asp/asp/avro_inter
@@ -119,7 +130,6 @@ scalac kryoreg.scala
 
 mkdir /root/BLB/distributed/dependencies 
 chmod +x /root/BLB/distributed/make_dependency_jar /root/asp/asp/jit/make_source_jar /root/BLB/run_dist_tests.sh
-
 
 
 
