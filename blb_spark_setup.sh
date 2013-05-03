@@ -84,7 +84,7 @@ if [ $APP == "multimedia" ] ; then
 	cd /mnt/test_examples/data
 	#wget https://s3.amazonaws.com/icsi_blb/500e1-15.dat.gz
 	#wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
-	wget https://s3.amazonaws.com/icsi_blb/40percentE1-15.dat.gz
+	wget https://s3.amazonaws.com/icsi_blb/40percente1-15.dat.gz
 	#wget https://s3.amazonaws.com/icsi_blb/e1-15.dat.gz
 	gunzip *.gz
 
@@ -100,8 +100,8 @@ elif [ $APP = "email" ]; then
 	gunzip *.gz
 
 	REPL_FACTOR=50
-	for (( k=0; k<=$REPL_FACTOR; k++));do
-		cat 1.2milemailstest.dat >> $REPL_FACTORemails.dat
+	for (( k=0; k<$(( REPL_FACTOR )); k++ ));do
+		cat 1.2milemailstest.dat >> $(( REPL_FACTOR ))xemails.dat
 	done 
 
 elif [ $APP = "ngrams" ]; then
