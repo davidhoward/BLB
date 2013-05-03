@@ -53,7 +53,7 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
         }
         outputs
     }).groupByKey().map(subsamp => {
-        var btstrapVec = subsamp._2.toIndexedSeq
+        var btstrapVec = subsamp._2.toArray
 
         val gen = new java.util.Random()
         val btstrapLen = btstrapVec.size
@@ -63,16 +63,13 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
                 subsamp_weights(gen.nextInt(btstrapLen)) += 1
         }
 
-        //for (temp <- btstrapVec zip subsamp_weights)
         for (i <- Range(0, subsamp_weights.length)){
                 btstrapVec(i).weight = subsamp_weights(i)
         }
 
-        val btstrapData = new BootstrapData()
-        btstrapData.data = btstrapVec.toList
-        btstrapData.models = models.value
-        val est = compute_estimate(btstrapData)
-        //val est = HelperFuncs.compute_estimate(btstrapVec.toArray)
+
+        val est = compute_estimate(btstrapVec, models.value)
+        //val est = HelperFuncs.compute_estimate(btstrapVec)
 
         val subsamp_id = subsamp._1/bnumBootstraps.value + 1
         (subsamp_id, est)

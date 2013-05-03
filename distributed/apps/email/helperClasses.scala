@@ -6,7 +6,7 @@ class CompressedFeatureVec extends Serializable{
 }
 
 class BootstrapData extends Serializable{
-	var data = List[CompressedFeatureVec]()
+	var data = Array[CompressedFeatureVec]()
 	var models = new Array[Array[Double]](1)
 }
 
