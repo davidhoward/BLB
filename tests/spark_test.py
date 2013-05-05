@@ -271,13 +271,13 @@ class NGramRatiosBLB(BLB):
 class SVMVerifierBLBTest(unittest.TestCase):
     def test_feature_vec_classifier(self): 
         test_blb = SVMEmailVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run(os.environ['HDFS_URL'] +'/test_examples/data/1.2milemailstest.dat',\
+        result = test_blb.run(os.environ['HDFS_URL'] +'/test_examples/data/50xemails.dat',\
                               '/mnt/test_examples/models/emails.model.java')
         print 'FINAL RESULT IS:', result  
 
     def test_multimedia_classifier(self): 
-        test_blb = SVMMultimediaVerifierBLB(25, 50, .7, with_scala=True)    
-        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/20percente1-15.dat',\
+        test_blb = SVMMultimediaVerifierBLB(25, 30, .8, with_scala=True)    
+        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/40percente1-15.dat',\
                               '/mnt/test_examples/models/e1-15double.model.java')
         print 'FINAL RESULT IS:', result  
 

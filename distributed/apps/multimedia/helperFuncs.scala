@@ -14,16 +14,20 @@ object HelperFuncs{
             var num = 0
             var weight = 0.0
             var count = 0
-            for (elem <- vector){
-                    if (first){
-                            featureVec.tag = Integer.parseInt(elem)
-                            first = false
-                    }
-                    else {
-                            weight = java.lang.Double.parseDouble((elem.substring(elem.indexOf(':')+1, elem.length)))
-                            featureVec.vecWeights(count) = weight
-                            count += 1
-                    }
+            var i = 0
+            var elem  = ""
+            while (i < vector.length){
+                elem = vector(i)
+                if (first){
+                    featureVec.tag = Integer.parseInt(elem)
+                    first = false
+                }
+                else {
+                    weight = java.lang.Double.parseDouble((elem.substring(elem.indexOf(':')+1, elem.length)))
+                    featureVec.vecWeights(count) = weight
+                    count += 1
+                }
+                i+=1
             }
             return featureVec
     }
@@ -33,7 +37,6 @@ object HelperFuncs{
         return result_java_list
     }    
 
-    //both uncompressed
     def dot(model:Array[Double], featureVec:FeatureVec): Double = {
         var featureVec_weights = featureVec.vecWeights
         var total =0.0

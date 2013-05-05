@@ -5,29 +5,32 @@ import java.io.ObjectInputStream
 
 object HelperFuncs {
     def formatInputItem(input: String): CompressedFeatureVec={
-            var vector = input.split(" ")
-            var featureVec = new CompressedFeatureVec()
-            featureVec.vecIndices = new Array[Int](vector.length-1)
-            featureVec.vecWeights = new Array[Double](vector.length-1)
+        var vector = input.split(" ")
+        var featureVec = new CompressedFeatureVec()
+        featureVec.vecIndices = new Array[Int](vector.length-1)
+        featureVec.vecWeights = new Array[Double](vector.length-1)
 
-            var first = true
-            var num = 0
-            var weight = 0
-            var count = 0
-            for (elem <- vector){
-                    if (first){
-                            featureVec.tag = Integer.parseInt(elem)
-                            first = false
-                    }
-                    else {
-                            num = Integer.parseInt(elem.substring(0, elem.indexOf(':')))-1
-                            weight = Integer.parseInt(elem.substring(elem.indexOf(':')+1, elem.length))
-                            featureVec.vecIndices(count) = num
-                            featureVec.vecWeights(count) = weight
-                            count += 1
-                    }
+        var first = true
+        var num = 0
+        var weight = 0
+        var count = 0
+        var i = 0
+        var elem = ""
+        while (i < vector.length){
+            if (first){
+                featureVec.tag = Integer.parseInt(elem)
+                first = false
             }
-            return featureVec
+            else {
+                num = Integer.parseInt(elem.substring(0, elem.indexOf(':')))-1
+                weight = Integer.parseInt(elem.substring(elem.indexOf(':')+1, elem.length))
+                featureVec.vecIndices(count) = num
+                featureVec.vecWeights(count) = weight
+                count += 1
+            }
+            i+=1
+        }
+        return featureVec
     }
 
     def formatOutput[A](input: A): A= {return input}

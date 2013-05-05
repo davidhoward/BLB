@@ -4,9 +4,3 @@ class CompressedFeatureVec extends Serializable{
 	var vecIndices = Array[Int]()
 	var vecWeights = Array[Double]()
 }
-
-class BootstrapData extends Serializable{
-	var data = Array[CompressedFeatureVec]()
-	var models = new Array[Array[Double]](1)
-}
-

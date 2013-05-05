@@ -27,7 +27,6 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
     var dataFilename = filenames.apply(0)
     val distData = sc.textFile(dataFilename.toString())
 
-    //put in try catch block ?
     var modelFilename = filenames.apply(1)
     val modelsArr = HelperFuncs.readModels(modelFilename.toString())
     val models = sc.broadcast(modelsArr)
@@ -40,38 +39,55 @@ def run(filenames: scala_arr[org.apache.avro.util.Utf8], NUM_TASKS: String, DIM:
         val gen = new java.util.Random()
         var subsampCount = 1
         var prob =0.0
-        var outputs = List((0, HelperFuncs.formatInputItem(item))).drop(1)
-        //choose subsamples and replicate them
-        for (i <- Range(0, bnumSubsamples.value)){
-                prob = gen.nextDouble()
-                if (prob < rand_prob.value){
-                        for (i <- Range((subsampCount-1) * bnumBootstraps.value , subsampCount*bnumBootstraps.value)){
-                            outputs ::= (i, HelperFuncs.formatInputItem(item))
-                        }
+        var formattedInputItem = HelperFuncs.formatInputItem(item)
+        //var outputs = List((0, formattedInputItem)).drop(1)
+        var outputs = Array.fill(bnumSubsamples.value * bnumBootstraps.value){ (0,formattedInputItem) }
+        //choose subsamples and replicate them for each bootstrap
+        var i = 0
+        var j = 0
+        var index = 0
+        while (i < bnumSubsamples.value){
+            prob = gen.nextDouble()
+            if (prob < rand_prob.value){
+                j = (subsampCount-1) * bnumBootstraps.value 
+                while (j < subsampCount*bnumBootstraps.value) {
+                //for (j <- Range((subsampCount-1) * bnumBootstraps.value , subsampCount*bnumBootstraps.value)){
+                    //outputs ::= (j, formattedInputItem)
+                    outputs(index) = (j, formattedInputItem)
+                    index += 1
+                    j += 1
                 }
-                subsampCount += 1
+            }
+            subsampCount += 1
+            i+=1
         }
-        outputs
-    }).groupByKey().map(subsamp => {
-        var btstrapVec = subsamp._2.toArray
+        //outputs
+        //outputs.slice(0,index).toIndexedSeq
+        outputs.slice(0,index).toSeq
+        //outputs.toList
+    }).groupByKey().map(bootstrap => {
+        var btstrapVec = bootstrap._2.toArray
 
         val gen = new java.util.Random()
         val btstrapLen = btstrapVec.size
         var subsamp_weights = new Array[Int](btstrapVec.size)
 
-        for (i <- Range(0, broadcastDataCount.value)){
-                subsamp_weights(gen.nextInt(btstrapLen)) += 1
+        var i = 0
+        while (i < broadcastDataCount.value){
+            subsamp_weights(gen.nextInt(btstrapLen)) += 1
+            i+=1
         }
 
-        for (i <- Range(0, subsamp_weights.length)){
-                btstrapVec(i).weight = subsamp_weights(i)
+        i = 0
+        while (i < subsamp_weights.length){
+            btstrapVec(i).weight = subsamp_weights(i)
+            i+=1
         }
-
 
         val est = compute_estimate(btstrapVec, models.value)
         //val est = HelperFuncs.compute_estimate(btstrapVec)
 
-        val subsamp_id = subsamp._1/bnumBootstraps.value + 1
+        val subsamp_id = bootstrap._1/bnumBootstraps.value + 1
         (subsamp_id, est)
 
     }).groupByKey().map(bootstrap_estimates =>{
