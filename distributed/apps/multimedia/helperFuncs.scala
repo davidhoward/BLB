@@ -8,11 +8,11 @@ object HelperFuncs{
     def formatInputItem(input: String): FeatureVec={
             var vector = input.split(" ")
             var featureVec = new FeatureVec()
-            featureVec.vecWeights = new Array[Double](vector.length-1)
+            featureVec.vecWeights = new Array[Float](vector.length-1)
 
             var first = true
             var num = 0
-            var weight = 0.0
+            var weight:Float = 0.0.asInstanceOf[Float]
             var count = 0
             var i = 0
             var elem  = ""
@@ -23,7 +23,7 @@ object HelperFuncs{
                     first = false
                 }
                 else {
-                    weight = java.lang.Double.parseDouble((elem.substring(elem.indexOf(':')+1, elem.length)))
+                    weight = java.lang.Float.parseFloat((elem.substring(elem.indexOf(':')+1, elem.length)))
                     featureVec.vecWeights(count) = weight
                     count += 1
                 }
@@ -32,14 +32,14 @@ object HelperFuncs{
             return featureVec
     }
 
-    def formatOutput(arr: Array[Double]): java.util.List[Double] ={
-        var result_java_list: java.util.List[Double] = ListBuffer( arr: _* )
+    def formatOutput(arr: Array[Float]): java.util.List[Float] ={
+        var result_java_list: java.util.List[Float] = ListBuffer( arr: _* )
         return result_java_list
     }    
 
-    def dot(model:Array[Double], featureVec:FeatureVec): Double = {
+    def dot(model:Array[Float], featureVec:FeatureVec): Float = {
         var featureVec_weights = featureVec.vecWeights
-        var total =0.0
+        var total =0.0.asInstanceOf[Float]
         var featureVec_weight = 0.0
         var model_weight = model(0)
         var i = 0
@@ -47,13 +47,14 @@ object HelperFuncs{
             total += featureVec_weights(i)* model(i+1)
             i += 1
         }
-        return total*model_weight
+        return (total*model_weight).asInstanceOf[Float]
     }
 
-    def readModels(filename: String): Array[Array[Array[Double]]]= {
+    def readModels(filename: String): Array[Array[Array[Float]]]= {
         var f_in: FileInputStream = new FileInputStream(filename)
         var obj_in: ObjectInputStream = new ObjectInputStream(f_in)
-        var modelMatrix: Array[Array[Array[Double]]] = obj_in.readObject().asInstanceOf[Array[Array[Array[Double]]]]
+        var modelMatrix: Array[Array[Array[Float]]] = obj_in.readObject().asInstanceOf[Array[Array[Array[Float]]]]
         return modelMatrix
     }
+
 }

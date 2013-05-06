@@ -4,14 +4,14 @@
 export APP=multimedia
 #export APP=ngrams
 echo "export APP=$APP" >> /root/.bash_profile
-
+source ~/root/.bash_profile
 #get general asp framework and blb specializer
 cd ~
 #git clone git://github.com/shoaibkamil/asp.git
 git clone git://github.com/pbirsinger/aspNew.git
 mv aspNew/ asp/
 git clone git://github.com/davidhoward/BLB.git
-git checkout $APP
+#git checkout $APP
 
 
 #compile spark
@@ -78,12 +78,13 @@ mkdir /mnt/test_examples/data
 
 if [ $APP == "multimedia" ] ; then
 	cd /mnt/test_examples/models
-	wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java.gz
+	#wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java.gz
+	wget https://s3.amazonaws.com/icsi_blb/e1-15float.model.java
 	gunzip *.gz 
 
 	cd /mnt/test_examples/data
 	#wget https://s3.amazonaws.com/icsi_blb/500e1-15.dat.gz
-	#wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
+	wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
 	wget https://s3.amazonaws.com/icsi_blb/40percente1-15.dat.gz
 	#wget https://s3.amazonaws.com/icsi_blb/e1-15.dat.gz
 	gunzip *.gz
@@ -99,7 +100,7 @@ elif [ $APP = "email" ]; then
 	wget https://s3.amazonaws.com/1.2milemails/1.2milemailstest.dat.gz
 	gunzip *.gz
 
-	REPL_FACTOR=50
+	REPL_FACTOR=100
 	for (( k=0; k<$(( REPL_FACTOR )); k++ ));do
 		cat 1.2milemailstest.dat >> $(( REPL_FACTOR ))xemails.dat
 	done 

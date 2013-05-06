@@ -57,12 +57,12 @@ class SVMEmailVerifierBLB(BLB):
 
 class SVMMultimediaVerifierBLB(BLB):
 
-    TYPE_DECS = (['compute_estimate', [('array', 'FeatureVec'), ('array', ('array', ('array','double')))], ('array', 'double')],
-         ['reduce_bootstraps', [('array', ('array', 'double'))], ('array','double')],
-         ['average', [('array', ('array','double'))], ('array', 'double')],
-         ['run', [('array', ('array','double'))], ('list','double')])
+    TYPE_DECS = (['compute_estimate', [('array', 'FeatureVec'), ('array', ('array', ('array','float')))], ('array', 'float')],
+         ['reduce_bootstraps', [('array', ('array', 'float'))], ('array','float')],
+         ['average', [('array', ('array','float'))], ('array', 'float')],
+         ['run', [('array', ('array','float'))], ('list','float')])
 
-    def compute_estimate(feature_vecs, model):
+    def compute_estimate(feature_vecs, models):
         num_classes = len(models)
         file_scores = [[0.0] * len(feature_vecs)] * num_classes
         file_tags = [0] * len(feature_vecs)
@@ -116,7 +116,7 @@ class SVMMultimediaVerifierBLB(BLB):
             class_index += 1
 
         #compute MD % for each class
-        md_ratios = [0.0] * num_classes
+        md_ratios = [float(0.0)] * num_classes
         class_index = 0
         for class_scores in file_scores:
             md_total = 0
@@ -131,15 +131,15 @@ class SVMMultimediaVerifierBLB(BLB):
                         md_total += feature_vecs[file_index].weight
                 file_index +=1
             if class_occurrences != 0:
-                md_ratios[class_index] = md_total *1.0 / class_occurrences
+                md_ratios[class_index] = float(md_total *1.0 / class_occurrences)
             class_index += 1
 
         return md_ratios
 
     #computes std dev
     def reduce_bootstraps(bootstraps):
-        class_md_ratios = [0.0] * len(bootstraps)
-        std_dev_md_ratios = [0.0] * len(bootstraps[0])
+        class_md_ratios = [float(0.0)] * len(bootstraps)
+        std_dev_md_ratios = [float(0.0)] * len(bootstraps[0])
         for i in range(len(bootstraps[0])):
             count = 0
             for md_ratios in bootstraps:
@@ -149,8 +149,8 @@ class SVMMultimediaVerifierBLB(BLB):
         return std_dev_md_ratios
 
     def average(subsamples):
-        class_std_dev_md_ratios = [0.0] * len(subsamples)
-        avg_std_dev_md_ratios = [0.0] * len(subsamples[0])
+        class_std_dev_md_ratios = [float(0.0)] * len(subsamples)
+        avg_std_dev_md_ratios = [float(0.0)] * len(subsamples[0])
         for i in range(len(subsamples[0])):
             count = 0
             for md_ratios in subsamples:
