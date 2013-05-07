@@ -17,6 +17,7 @@ object HelperFuncs {
         var i = 0
         var elem = ""
         while (i < vector.length){
+            elem = vector(i)
             if (first){
                 featureVec.tag = Integer.parseInt(elem)
                 first = false

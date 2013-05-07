@@ -84,7 +84,7 @@ if [ $APP == "multimedia" ] ; then
 
 	cd /mnt/test_examples/data
 	#wget https://s3.amazonaws.com/icsi_blb/500e1-15.dat.gz
-	wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
+	#wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
 	wget https://s3.amazonaws.com/icsi_blb/40percente1-15.dat.gz
 	#wget https://s3.amazonaws.com/icsi_blb/e1-15.dat.gz
 	gunzip *.gz
