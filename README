@@ -89,9 +89,7 @@ run ./run_dist_tests.sh
 
 If this works, congrats! You have just run the BLB (bag of little bootstraps) algorithm on 
 your cluster. The default behavior is to compute a classifier's estimated accuracy on a subset 
-of the Enron email corpus. As a note, when the calculation is over, the process will hang and 
-not completely end (some funky inner workings of Spark) so you can just control-c it after it 
-tells you the result (res is:......)
+of the Enron email corpus.
 
 4. RUNNING YOUR FIRST SPECIALIZED PROGRAM
 
