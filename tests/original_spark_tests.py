@@ -14,7 +14,6 @@ class SVMEmailVerifierBLB(BLB):
     def compute_estimate(feature_vecs, models):
         errors =0.0
         num_feature_vecs = 0
-        num_classes = len(models)
         for feature_vec in feature_vecs:
             weight = feature_vec.weight
             num_feature_vecs += weight
@@ -31,36 +30,18 @@ class SVMEmailVerifierBLB(BLB):
                 errors += weight                
         return errors / num_feature_vecs
     
-    #calculates average error estimate
-    def reduce_bootstraps(bootstraps):
-        mean = 0.0
-        for bootstrap in bootstraps:
-            mean += bootstrap
-        return mean / len(bootstraps)
-    
     #calculates stddev on error estimates
     def reduce_bootstraps(bootstraps):
-        mean = 0.0
-        for bootstrap in bootstraps:
-            mean += bootstrap
-        mean = mean / len(bootstraps)
-        squared_dif =0.0
-        for bootstrap in bootstraps:           
-            squared_dif += (mean-bootstrap) * (mean-bootstrap)
-        return (squared_dif  / (len(bootstraps)-1)) ** .5
+        scala_lib.std_dev(bootstraps)
         
     def average(subsamples):
-        mean = 0.0
-        for subsample in subsamples:
-            mean += subsample
-        return mean/len(subsamples)
+        scala_lib.mean(subsamples)
 
 class SVMMultimediaVerifierBLB(BLB):
-
-    TYPE_DECS = (['compute_estimate', [('array', 'FeatureVec'), ('array', ('array', ('array','float')))], ('array', 'float')],
-         ['reduce_bootstraps', [('array', ('array', 'float'))], ('array','float')],
-         ['average', [('array', ('array','float'))], ('array', 'float')],
-         ['run', [('array', ('array','float'))], ('list','float')])
+    TYPE_DECS = (['compute_estimate', [('array', 'FeatureVec'), ('array', ('array', ('array','double')))], ('array', 'double')],
+         ['reduce_bootstraps', [('array', ('array', 'double'))], ('array','double')],
+         ['average', [('array', ('array','double'))], ('array', 'double')],
+         ['run', [('array', ('array','double'))], ('list','double')])
 
     def compute_estimate(feature_vecs, models):
         num_classes = len(models)
@@ -96,7 +77,7 @@ class SVMMultimediaVerifierBLB(BLB):
             for score in class_scores:
                 tag = file_tags[file_index]
                 if tag != class_index+1:
-                    weight = float(feature_vecs[file_index].weight)
+                    weight = feature_vecs[file_index].weight
                     negative_scores[negative_index] = [score, weight]
                     negative_index += 1
                     total_negative += weight
@@ -116,7 +97,7 @@ class SVMMultimediaVerifierBLB(BLB):
             class_index += 1
 
         #compute MD % for each class
-        md_ratios = [float(0.0)] * num_classes
+        md_ratios = [0.0] * num_classes
         class_index = 0
         for class_scores in file_scores:
             md_total = 0
@@ -131,15 +112,15 @@ class SVMMultimediaVerifierBLB(BLB):
                         md_total += feature_vecs[file_index].weight
                 file_index +=1
             if class_occurrences != 0:
-                md_ratios[class_index] = float(md_total *1.0 / class_occurrences)
+                md_ratios[class_index] = md_total *1.0 / class_occurrences
             class_index += 1
 
         return md_ratios
 
     #computes std dev
     def reduce_bootstraps(bootstraps):
-        class_md_ratios = [float(0.0)] * len(bootstraps)
-        std_dev_md_ratios = [float(0.0)] * len(bootstraps[0])
+        class_md_ratios = [0.0] * len(bootstraps)
+        std_dev_md_ratios = [0.0] * len(bootstraps[0])
         for i in range(len(bootstraps[0])):
             count = 0
             for md_ratios in bootstraps:
@@ -149,8 +130,8 @@ class SVMMultimediaVerifierBLB(BLB):
         return std_dev_md_ratios
 
     def average(subsamples):
-        class_std_dev_md_ratios = [float(0.0)] * len(subsamples)
-        avg_std_dev_md_ratios = [float(0.0)] * len(subsamples[0])
+        class_std_dev_md_ratios = [0.0] * len(subsamples)
+        avg_std_dev_md_ratios = [0.0] * len(subsamples[0])
         for i in range(len(subsamples[0])):
             count = 0
             for md_ratios in subsamples:
@@ -225,26 +206,22 @@ class NGramRatiosBLB(BLB):
     
         decade_ratios_arr = [0.0] * (TOTAL_DECADES-1)
         count = 0
+        baseline_ratio = 0.0
         for queue in top_n_ratios_per_decade:
             ratios_summed = 0.0
+            #assuming always at least num_top_ratios of ngrams per decade
+            num_ratios = 0.0
             for i in range(NUM_TOP_RATIOS): 
                 if top_n_ratios_per_decade[count].qsize() > 0:
                     ratios_summed += PriorityQueue.get(top_n_ratios_per_decade[count])
-
-            decade_ratios_arr[count] = ratios_summed / NUM_TOP_RATIOS
+                    num_ratios += 1.0 
+            if count == 0:
+                    baseline_ratio = ratios_summed / num_ratios
+                    decade_ratios_arr[count] = 1
+            #output factor off of baseline ratio 
+            decade_ratios_arr[count] = (ratios_summed / num_ratios) / baseline_ratio
             count += 1
         return decade_ratios_arr
-
-    # def reduce_bootstraps(bootstraps):
-    #     decade_ratios = [0.0] * len(bootstraps)
-    #     std_dev_ratios = [0.0] * len(bootstraps[0])
-    #     for i in range(len(bootstraps[0])):
-    #         count = 0
-    #         for cross_decades in bootstraps:
-    #             decade_ratios[count] = cross_decades[i] 
-    #             count += 1 
-    #         std_dev_ratios[i] = scala_lib.std_dev(decade_ratios)
-    #     return std_dev_ratios
 
     def reduce_bootstraps(subsamples):
         decade_std_devs = [0.0] * len(subsamples)
@@ -276,14 +253,14 @@ class SVMVerifierBLBTest(unittest.TestCase):
         print 'FINAL RESULT IS:', result  
 
     def test_multimedia_classifier(self): 
-        test_blb = SVMMultimediaVerifierBLB(25, 50, .85, with_scala=True)    
-        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/40percente1-15.dat',\
-                              '/mnt/test_examples/models/e1-15float.model.java')
+        test_blb = SVMMultimediaVerifierBLB(4, 3, .85, with_scala=True)    
+        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/full_test.svmdat',\
+                              '/mnt/test_examples/models/med_supervec_model.double.java')
         print 'FINAL RESULT IS:', result  
 
     def test_ngram_ratio_calculator(self):
-        test_blb = NGramRatiosBLB(25, 50, .7, with_scala=True)
-        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/10_percent_cleaned_blb.seq')
+        test_blb = NGramRatiosBLB(4, 5, .7, with_scala=True)
+        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/10percent_cleaned_blb.csv')
         print 'FINAL RESULT IS:', result  
 
 if __name__ == '__main__':
