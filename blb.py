@@ -26,9 +26,9 @@ class BLB:
 
         self.dim = dimension
         self.with_cilk=with_cilk
-	self.with_openMP = with_openMP
-	self.pure_python= pure_python
-	self.with_scala = with_scala
+    	self.with_openMP = with_openMP
+    	self.pure_python= pure_python
+    	self.with_scala = with_scala
 
         self.estimate_src = inspect.getsource(self.compute_estimate)
         self.estimate_ast = ast.parse(self.estimate_src.lstrip())

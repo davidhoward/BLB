@@ -4,87 +4,68 @@ from asp.avro_inter.py_avro_inter import *
 import os
 
 class SVMMultimediaVerifierBLB(BLB):
-    TYPE_DECS = (['compute_estimate', [('array', 'FeatureVec'), ('array', ('array', ('array','double')))], ('array', 'double')],
+    TYPE_DECS = (['compute_estimate', [('array', ('array', ('array','double')))], ('array', 'double')],
          ['reduce_bootstraps', [('array', ('array', 'double'))], ('array','double')],
          ['average', [('array', ('array','double'))], ('array', 'double')],
          ['run', [('array', ('array','double'))], ('list','double')])
 
-    def compute_estimate(feature_vecs, models):
-        num_classes = len(models)
-        file_scores = [[0.0] * len(feature_vecs)] * num_classes
-        file_tags = [0] * len(feature_vecs)
-        file_index = 0
-        tag = 0
+    #computes EER from scores 
+    def compute_estimate(self,scores):
+        num_classes = len(scores)
 
-        #compute score for each file 
-        for feature_vec in feature_vecs:
-            tag = feature_vec.tag
-            file_tags[file_index] = tag 
-            for i in range(num_classes):
-                if feature_vec.weight > 0:
-                    model = models[i]
-                    class_score = 0.0
-                    for sub_model in model:
-                        class_score  += HelperFuncs.dot(sub_model, feature_vec)
-                    file_scores[i][file_index] = class_score
-            file_index += 1
+        thresholds = [0.0] * num_classes
+        correct_under_thresh = [0] * num_classes
+        incorrect_under_thresh = [0] * num_classes
+        num_correct = [0] * num_classes
+        num_incorrect = [0] * num_classes
+        FA = [0.0] * num_classes
+        MD = [0.0] * num_classes
 
-        #compute threshold for each class s.t. FA <= 5% for each class
-        TARGET_FA_RATE = .05
-        file_index = 0
-        class_index = 0
-        class_thresholds = [0.0] * num_classes
-        num_negative = 0
-        for class_scores in file_scores:
-            negative_scores = [[0.0, 0.0]] * len(feature_vecs)
-            file_index = 0
-            negative_index = 0
-            total_negative = 0.0
-            for score in class_scores:
-                tag = file_tags[file_index]
-                if tag != class_index+1:
-                    weight = feature_vecs[file_index].weight
-                    negative_scores[negative_index] = [score, weight]
-                    negative_index += 1
-                    total_negative += weight
-                file_index += 1 
-            
-            negative_scores = negative_scores[0:negative_index]
-            negative_scores.sort()
-            summed = 0.0
-            negative_index = 0
-            neg_score_pair = [0.0, 0.0]
-            while (summed/ total_negative < (1.0 -TARGET_FA_RATE)):
-                neg_score_pair = negative_scores[negative_index]
-                summed += neg_score_pair[1]
-                negative_index +=1
-            class_thresholds[class_index] = neg_score_pair[0]
+        for i in range(num_classes):
+            scores[i].sort()
+            # begin with threshold at lowest score for each class
+            thresholds[i] = scores[i][0]
 
-            class_index += 1
+            #assuming here that if on threshold, classified as positive
+            if thresholds[i][1] == 1:
+                correct_under_thresh[i] += 1
+            else:
+                incorrect_under_thresh[i] += 1
 
-        #compute MD % for each class
-        md_ratios = [0.0] * num_classes
-        class_index = 0
-        for class_scores in file_scores:
-            md_total = 0
-            class_occurrences = 0
-            file_index = 0
+            for score in scores[i]:
+                if score[1] == 1:
+                    num_correct[i] += 1
+                else:
+                    num_incorrect[i] += 1                    
+            MD[i] = correct_under_thresh[i]  * 1.0 / num_correct[i]
+            FA[i] = (num_incorrect[i]-incorrect_under_thresh[i]) *1.0 / num_incorrect[i]
 
-            for score in class_scores:
-                tag = file_tags[file_index]
-                if tag == class_index+1:
-                    class_occurrences += feature_vecs[file_index].weight
-                    if score < class_thresholds[class_index]:
-                        md_total += feature_vecs[file_index].weight
-                file_index +=1
-            if class_occurrences != 0:
-                md_ratios[class_index] = md_total *1.0 / class_occurrences
-            class_index += 1
+        EERs =[0.0] * num_classes
+        for i in range(num_classes):
+            count = 0
+            while FA[i] > MD[i]:
+                if thresholds[i][1] == 1:
+                    correct_under_thresh[i] += 1
+                else:
+                    incorrect_under_thresh[i] += 1
+                FA[i] = (num_incorrect[i]-incorrect_under_thresh[i]) * 1.0 / num_incorrect[i]
+                MD[i] =correct_under_thresh[i] * 1.0 / num_correct[i]
+                thresholds[i] = scores[i][count]
+                count += 1
 
-        return md_ratios
+            EERs[i] = (FA[i] + MD[i])/2.0
+        return EERs
+
+    def std_dev(self, arr):
+        from numpy import std
+        return std(arr)
+
+    def mean(self, arr):
+        from numpy import mean
+        return mean(arr) 
 
     #computes std dev
-    def reduce_bootstraps(bootstraps):
+    def reduce_bootstraps(self,bootstraps):
         class_md_ratios = [0.0] * len(bootstraps)
         std_dev_md_ratios = [0.0] * len(bootstraps[0])
         for i in range(len(bootstraps[0])):
@@ -92,10 +73,12 @@ class SVMMultimediaVerifierBLB(BLB):
             for md_ratios in bootstraps:
                 class_md_ratios[count] = md_ratios[i] 
                 count += 1 
-            std_dev_md_ratios[i] = scala_lib.std_dev(class_md_ratios)
+            #std_dev_md_ratios[i] = scala_lib.std_dev(class_md_ratios)
+            std_dev_md_ratios[i] = self.mean(class_md_ratios)
         return std_dev_md_ratios
 
-    def average(subsamples):
+
+    def average(self,subsamples):
         class_std_dev_md_ratios = [0.0] * len(subsamples)
         avg_std_dev_md_ratios = [0.0] * len(subsamples[0])
         for i in range(len(subsamples[0])):
@@ -103,18 +86,40 @@ class SVMMultimediaVerifierBLB(BLB):
             for md_ratios in subsamples:
                 class_std_dev_md_ratios[count] = md_ratios[i] 
                 count += 1 
-            avg_std_dev_md_ratios[i] = scala_lib.mean(class_std_dev_md_ratios)
+            #avg_std_dev_md_ratios[i] = scala_lib.mean(class_std_dev_md_ratios)
+            avg_std_dev_md_ratios[i] = self.mean(class_std_dev_md_ratios)
         return avg_std_dev_md_ratios
 
 class MultimediaClassifierVerificationBLBTest(unittest.TestCase):
     def test_multimedia_classifier(self): 
-        test_blb = SVMMultimediaVerifierBLB(4, 3, .85, with_scala=True)    
-        result = test_blb.run(os.environ['HDFS_URL']+'/test_examples/data/full_test.svmdat',\
-                              '/mnt/test_examples/models/med_supervec_model.double.java')
+        test_blb = SVMMultimediaVerifierBLB(30, 100, .9, pure_python=True)  
+        SCORES_DIR='/home/eecs/peterbir/blb/test_data/150k/'  
+        event_scores = self.read_event_scores(SCORES_DIR)
+        result = test_blb.run(event_scores)
         print 'FINAL RESULT IS:', result  
+
+    def read_event_scores(self, scores_dir):
+        file_list = os.listdir(scores_dir)
+        event_scores = [0.0] * len(file_list)
+        event_count=0
+        for f in file_list:
+            lines = open(scores_dir+f).readlines()
+            event_scores[event_count] = [0.0] * len(lines)
+            score_count = 0
+            for score in lines:
+                score = score.strip().split(' ')
+                if int(score[0]) == 0:
+                    event_scores[event_count][score_count] = [float(score[1]), 0]
+                else:
+                    event_scores[event_count][score_count] = [float(score[1]), 1]
+                score_count += 1
+
+            event_count += 1
+        return event_scores
 
 if __name__ == '__main__':
     spark_test_suite = unittest.TestSuite()
-    spark_test_suite.addTest(SVMVerifierBLBTest('test_multimedia_classifier'))
+    spark_test_suite.addTest(MultimediaClassifierVerificationBLBTest('test_multimedia_classifier'))
     unittest.TextTestRunner().run(spark_test_suite)
+
 
