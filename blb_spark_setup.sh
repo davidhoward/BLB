@@ -1,10 +1,11 @@
 #!/bin/bash
 
+
 #export APP=email
 export APP=multimedia
 #export APP=ngrams
 echo "export APP=$APP" >> /root/.bash_profile
-source ~/root/.bash_profile
+source /root/.bash_profile
 #get general asp framework and blb specializer
 cd ~
 #git clone git://github.com/shoaibkamil/asp.git
@@ -16,8 +17,9 @@ git clone git://github.com/davidhoward/BLB.git
 
 #compile spark
 cd /root/spark
-# git pull
-#sbt/sbt compile
+# git checkout master
+git pull
+# sbt/sbt compile
 # sbt/sbt package 
 sbt/sbt assembly
 
@@ -49,23 +51,23 @@ python setup.py install
 cd /root/avro
 mkdir java_avro
 cd java_avro
-#wget http://www.trieuvan.com/apache/avro/avro-1.6.3/java/avro-1.6.3.jar
-wget http://www.bizdirusa.com/mirrors/apache/avro/avro-1.7.4/java/avro-1.7.4.jar
-unzip avro-1.7.4.jar
+#wget http://www.bizdirusa.com/mirrors/apache/avro/avro-1.7.4/java/avro-1.7.4.jar
+wget http://www.dsgnwrld.com/am/avro/avro-1.7.5/java/avro-1.7.5.jar
+unzip *.jar
 mv org /root/avro
 
 #install jackson (java json processor)
 cd /root/avro
-#wget http://jackson.codehaus.org/1.9.6/jackson-all-1.9.6.jar
 wget http://jackson.codehaus.org/1.9.11/jackson-all-1.9.11.jar
 unzip jackson-all-1.9.11.jar
 
 #make sure scala is on PATH
-echo "export PATH=$PATH:/root/scala-2.9.2/bin" >> /root/.bash_profile
+echo "export PATH=$PATH:/root/scala-2.9.2/bin/" >> /root/.bash_profile
 
 #point CLASSPATH to spark, avro,etc
+#echo "export CLASSPATH=$CLASSPATH:/root/:.:/root/avro:/root/BLB/distributed:/root/BLB/distributed/apps/$APP/:/root/spark/repl/target/*" >> /root/.bash_profile
 echo "export CLASSPATH=$CLASSPATH:/root/:.:/root/avro:/root/BLB/distributed:/root/BLB/distributed/apps/$APP/:/root/spark/core/target/*" >> /root/.bash_profile
-
+#/root/spark/core/target/*
 echo "export NUM_SLAVE_NODES=$(~/ephemeral-hdfs/bin/hadoop dfsadmin -report | grep "Name:" | wc -l)" >> /root/.bash_profile
 echo "export NUM_CORES_PER_NODE=$(nproc)" >> /root/.bash_profile
 
@@ -78,15 +80,15 @@ mkdir /mnt/test_examples/data
 
 if [ $APP == "multimedia" ] ; then
 	cd /mnt/test_examples/models
-	#wget https://s3.amazonaws.com/icsi_blb/e1-15double.model.java.gz
-	wget https://s3.amazonaws.com/icsi_blb/e1-15float.model.java
-	gunzip *.gz 
+	wget https://s3.amazonaws.com/icsi_blb_paper/med_supervec_model.double.java
 
 	cd /mnt/test_examples/data
-	#wget https://s3.amazonaws.com/icsi_blb/500e1-15.dat.gz
-	#wget https://s3.amazonaws.com/icsi_blb/20percente1-15.dat.gz
-	wget https://s3.amazonaws.com/icsi_blb/40percente1-15.dat.gz
-	#wget https://s3.amazonaws.com/icsi_blb/e1-15.dat.gz
+
+	wget https://s3.amazonaws.com/icsi_blb_paper/test_chunks/test_negatives.svmdat.gz
+	wget https://s3.amazonaws.com/icsi_blb_paper/test_chunks/full.svmdat.gz
+	wget https://s3.amazonaws.com/icsi_blb_paper/test_chunks/half.svmdat.gz
+	wget https://s3.amazonaws.com/icsi_blb_paper/test_chunks/quarter.svmdat.gz
+	wget https://s3.amazonaws.com/icsi_blb_paper/test_chunks/eighth.svmdat.gz
 	gunzip *.gz
 
 elif [ $APP = "email" ]; then
@@ -100,14 +102,19 @@ elif [ $APP = "email" ]; then
 	wget https://s3.amazonaws.com/1.2milemails/1.2milemailstest.dat.gz
 	gunzip *.gz
 
-	REPL_FACTOR=100
-	for (( k=0; k<$(( REPL_FACTOR )); k++ ));do
-		cat 1.2milemailstest.dat >> $(( REPL_FACTOR ))xemails.dat
-	done 
+	# REPL_FACTOR=100
+	# REPL_FACTOR=20
+	# for (( k=0; k<$(( REPL_FACTOR )); k++ ));do
+	# 			#should use dd instead
+	# 		#dd if=all_cleaned_blb.csv bs=100000k cbs=10000k of=all_copy oflag=append
+	# 		#dd if=all_cleaned_blb.csv bs=1G cbs=10000k of=first10G.csv count=10
+	# 	cat 1.2milemailstest.dat >> $(( REPL_FACTOR ))xemails.dat
+	# done 
 
 elif [ $APP = "ngrams" ]; then
 	cd /mnt/test_examples/data
-	wget https://s3.amazonaws.com/ngrams_blb/10_percent_cleaned_blb.seq
+	wget https://s3.amazonaws.com/ngrams_blb/10percent_cleaned_blb.csv.gz
+	gunzip *.gz
 fi
 
 #/root/ephemeral-hdfs/bin/hadoop dfs -rmr /test_examples
